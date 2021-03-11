@@ -24,15 +24,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "divsufsort_private.hpp"
-#include "lg_table.hpp"
-
+#include "common.hpp"
+#include "static_stack.hpp"
 
 /*- Private Functions -*/
 
 #if (SS_BLOCKSIZE == 0) || (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE)
 
-static inline saint_t ss_ilg(saidx_t n) {
+static inline int32_t ss_ilg(int n) {
 #if SS_BLOCKSIZE == 0
 # if defined(BUILD_DIVSUFSORT64)
   return (n >> 32) ?
@@ -72,27 +71,8 @@ static inline saint_t ss_ilg(saidx_t n) {
 
 #if SS_BLOCKSIZE != 0
 
-static constexpr inline saint_t sqq_table[256] = {
-  0,  16,  22,  27,  32,  35,  39,  42,  45,  48,  50,  53,  55,  57,  59,  61,
- 64,  65,  67,  69,  71,  73,  75,  76,  78,  80,  81,  83,  84,  86,  87,  89,
- 90,  91,  93,  94,  96,  97,  98,  99, 101, 102, 103, 104, 106, 107, 108, 109,
-110, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126,
-128, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142,
-143, 144, 144, 145, 146, 147, 148, 149, 150, 150, 151, 152, 153, 154, 155, 155,
-156, 157, 158, 159, 160, 160, 161, 162, 163, 163, 164, 165, 166, 167, 167, 168,
-169, 170, 170, 171, 172, 173, 173, 174, 175, 176, 176, 177, 178, 178, 179, 180,
-181, 181, 182, 183, 183, 184, 185, 185, 186, 187, 187, 188, 189, 189, 190, 191,
-192, 192, 193, 193, 194, 195, 195, 196, 197, 197, 198, 199, 199, 200, 201, 201,
-202, 203, 203, 204, 204, 205, 206, 206, 207, 208, 208, 209, 209, 210, 211, 211,
-212, 212, 213, 214, 214, 215, 215, 216, 217, 217, 218, 218, 219, 219, 220, 221,
-221, 222, 222, 223, 224, 224, 225, 225, 226, 226, 227, 227, 228, 229, 229, 230,
-230, 231, 231, 232, 232, 233, 234, 234, 235, 235, 236, 236, 237, 237, 238, 238,
-239, 240, 240, 241, 241, 242, 242, 243, 243, 244, 244, 245, 245, 246, 246, 247,
-247, 248, 248, 249, 249, 250, 250, 251, 251, 252, 252, 253, 253, 254, 254, 255
-};
-
-static inline saidx_t ss_isqrt(saidx_t x) {
-  saidx_t y, e;
+static inline int ss_isqrt(int x) {
+  int y, e;
 
   if(x >= (SS_BLOCKSIZE * SS_BLOCKSIZE)) { return SS_BLOCKSIZE; }
   e = (x & 0xffff0000) ?
@@ -122,8 +102,8 @@ static inline saidx_t ss_isqrt(saidx_t x) {
 /*---------------------------------------------------------------------------*/
 
 /* Compares two suffixes. */
-static inline saint_t ss_compare(const sauchar_t *T, const saidx_t *p1, const saidx_t *p2, saidx_t depth) {
-  const sauchar_t *U1, *U2, *U1n, *U2n;
+template <typename CharT = unsigned char, typename ResultT = int> static inline int32_t ss_compare(const CharT *T, const ResultT *p1, const ResultT *p2, int depth) {
+  const CharT *U1, *U2, *U1n, *U2n;
 
   for(U1 = T + depth + *p1,
       U2 = T + depth + *p2,
@@ -144,10 +124,10 @@ static inline saint_t ss_compare(const sauchar_t *T, const saidx_t *p1, const sa
 #if (SS_BLOCKSIZE != 1) && (SS_INSERTIONSORT_THRESHOLD != 1)
 
 /* Insertionsort for small size groups */
-static void ss_insertionsort(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *last, saidx_t depth) {
-  saidx_t *i, *j;
-  saidx_t t;
-  saint_t r;
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_insertionsort(const CharT *T, const ResultT *PA, ResultT *first, ResultT *last, int depth) {
+  ResultT *i, *j;
+  ResultT t;
+  int32_t r;
 
   for(i = last - 2; first <= i; --i) {
     for(t = *i, j = i + 1; 0 < (r = ss_compare(T, PA + t, PA + *j, depth));) {
@@ -166,10 +146,10 @@ static void ss_insertionsort(const sauchar_t *T, const saidx_t *PA, saidx_t *fir
 
 #if (SS_BLOCKSIZE == 0) || (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE)
 
-static inline void ss_fixdown(const sauchar_t *Td, const saidx_t *PA, saidx_t *SA, saidx_t i, saidx_t size) {
-  saidx_t j, k;
-  saidx_t v;
-  saint_t c, d, e;
+template <typename CharT = unsigned char, typename ResultT = int> static inline void ss_fixdown(const CharT *Td, const ResultT *PA, ResultT *SA, int i, int size) {
+  ResultT j, k;
+  ResultT v;
+  int32_t c, d, e;
 
   for(v = SA[i], c = Td[PA[v]]; (j = 2 * i + 1) < size; SA[i] = SA[k], i = k) {
     d = Td[PA[SA[k = j++]]];
@@ -180,9 +160,9 @@ static inline void ss_fixdown(const sauchar_t *Td, const saidx_t *PA, saidx_t *S
 }
 
 /* Simple top-down heapsort. */
-static void ss_heapsort(const sauchar_t *Td, const saidx_t *PA, saidx_t *SA, saidx_t size) {
-  saidx_t i, m;
-  saidx_t t;
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_heapsort(const CharT *Td, const ResultT *PA, ResultT *SA, int size) {
+  ResultT i, m;
+  ResultT t;
 
   m = size;
   if((size % 2) == 0) {
@@ -203,8 +183,9 @@ static void ss_heapsort(const sauchar_t *Td, const saidx_t *PA, saidx_t *SA, sai
 /*---------------------------------------------------------------------------*/
 
 /* Returns the median of three elements. */
-static inline saidx_t * ss_median3(const sauchar_t *Td, const saidx_t *PA, saidx_t *v1, saidx_t *v2, saidx_t *v3) {
-  saidx_t *t;
+// TODO use reference
+template <typename CharT = unsigned char, typename ResultT = int> static inline int * ss_median3(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3) {
+  ResultT *t;
   if(Td[PA[*v1]] > Td[PA[*v2]]) { std::swap(v1, v2); }
   if(Td[PA[*v2]] > Td[PA[*v3]]) {
     if(Td[PA[*v1]] > Td[PA[*v3]]) { return v1; }
@@ -214,8 +195,8 @@ static inline saidx_t * ss_median3(const sauchar_t *Td, const saidx_t *PA, saidx
 }
 
 /* Returns the median of five elements. */
-static inline saidx_t * ss_median5(const sauchar_t *Td, const saidx_t *PA, saidx_t *v1, saidx_t *v2, saidx_t *v3, saidx_t *v4, saidx_t *v5) {
-  saidx_t *t;
+template <typename CharT = unsigned char, typename ResultT = int> static inline int * ss_median5(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3, ResultT *v4, ResultT *v5) {
+  ResultT *t;
   if(Td[PA[*v2]] > Td[PA[*v3]]) { std::swap(v2, v3); }
   if(Td[PA[*v4]] > Td[PA[*v5]]) { std::swap(v4, v5); }
   if(Td[PA[*v2]] > Td[PA[*v4]]) { std::swap(v2, v4); std::swap(v3, v5); }
@@ -226,9 +207,9 @@ static inline saidx_t * ss_median5(const sauchar_t *Td, const saidx_t *PA, saidx
 }
 
 /* Returns the pivot element. */
-static inline saidx_t * ss_pivot(const sauchar_t *Td, const saidx_t *PA, saidx_t *first, saidx_t *last) {
-  saidx_t *middle;
-  saidx_t t;
+template <typename CharT = unsigned char, typename ResultT = int> static inline int * ss_pivot(const CharT *Td, const ResultT *PA, ResultT *first, ResultT *last) {
+  ResultT *middle;
+  ResultT t;
 
   t = last - first;
   middle = first + t / 2;
@@ -252,9 +233,9 @@ static inline saidx_t * ss_pivot(const sauchar_t *Td, const saidx_t *PA, saidx_t
 /*---------------------------------------------------------------------------*/
 
 /* Binary partition for substrings. */
-static inline saidx_t * ss_partition(const saidx_t *PA, saidx_t *first, saidx_t *last, saidx_t depth) {
-  saidx_t *a, *b;
-  saidx_t t;
+template <typename ResultT = int> static inline int * ss_partition(const ResultT *PA, int *first, int *last, int depth) {
+  ResultT *a, *b;
+  ResultT t;
   for(a = first - 1, b = last;;) {
     for(; (++a < b) && ((PA[*a] + depth) >= (PA[*a + 1] + 1));) { *a = ~*a; }
     for(; (a < --b) && ((PA[*b] + depth) <  (PA[*b + 1] + 1));) { }
@@ -268,23 +249,23 @@ static inline saidx_t * ss_partition(const saidx_t *PA, saidx_t *first, saidx_t 
 }
 
 /* Multikey introsort for medium size groups. */
-static void ss_mintrosort(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *last, saidx_t depth) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_mintrosort(const CharT *T, const ResultT *PA, ResultT *first, ResultT *last, int depth) {
   struct stack_type {
-    saidx_t *a;
-    saidx_t *b;
-    saidx_t c;
-    saint_t d;
+    ResultT *a;
+    ResultT *b;
+    ResultT c;
+    int32_t d;
     constexpr operator auto() noexcept {
       return std::tie(a,b,c,d);
     }
   };
   
   static_stack<stack_type, SS_MISORT_STACKSIZE> stack;
-  const sauchar_t *Td;
-  saidx_t *a, *b, *c, *d, *e, *f;
-  saidx_t s, t;
-  saint_t limit;
-  saint_t v, x = 0;
+  const CharT *Td;
+  ResultT *a, *b, *c, *d, *e, *f;
+  ResultT s, t;
+  int32_t limit;
+  int32_t v, x = 0;
 
   for(limit = ss_ilg(last - first);;) {
 
@@ -416,16 +397,15 @@ static void ss_mintrosort(const sauchar_t *T, const saidx_t *PA, saidx_t *first,
 
 #if SS_BLOCKSIZE != 0
 
-static inline void ss_blockswap(saidx_t *a, saidx_t *b, saidx_t n) {
-  saidx_t t;
+template <typename ResultT = int> static inline void ss_blockswap(ResultT *a, ResultT *b, int n) {
   for(; 0 < n; --n, ++a, ++b) {
-    t = *a, *a = *b, *b = t;
+		std::swap(*a, *b);
   }
 }
 
-static inline void ss_rotate(saidx_t *first, saidx_t *middle, saidx_t *last) {
-  saidx_t *a, *b, t;
-  saidx_t l, r;
+template <typename ResultT = int> static inline void ss_rotate(ResultT *first, ResultT *middle, ResultT *last) {
+  ResultT *a, *b, t;
+  ResultT l, r;
   l = middle - first, r = last - middle;
   for(; (0 < l) && (0 < r);) {
     if(l == r) { ss_blockswap(first, middle, l); break; }
@@ -462,12 +442,12 @@ static inline void ss_rotate(saidx_t *first, saidx_t *middle, saidx_t *last) {
 
 /*---------------------------------------------------------------------------*/
 
-static void ss_inplacemerge(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *middle, saidx_t *last, saidx_t depth) {
-  const saidx_t *p;
-  saidx_t *a, *b;
-  saidx_t len, half;
-  saint_t q, r;
-  saint_t x;
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_inplacemerge(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, int depth) {
+  const ResultT *p;
+  ResultT *a, *b;
+  ResultT len, half;
+  int32_t q, r;
+  int32_t x;
 
   for(;;) {
     if(*(last - 1) < 0) { x = 1; p = PA + ~*(last - 1); }
@@ -501,10 +481,10 @@ static void ss_inplacemerge(const sauchar_t *T, const saidx_t *PA, saidx_t *firs
 /*---------------------------------------------------------------------------*/
 
 /* Merge-forward with internal buffer. */
-static void ss_mergeforward(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *middle, saidx_t *last, saidx_t *buf, saidx_t depth) {
-  saidx_t *a, *b, *c, *bufend;
-  saidx_t t;
-  saint_t r;
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_mergeforward(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, int depth) {
+  ResultT *a, *b, *c, *bufend;
+  ResultT t;
+  int32_t r;
 
   bufend = buf + (middle - first) - 1;
   ss_blockswap(buf, first, middle - first);
@@ -547,12 +527,12 @@ static void ss_mergeforward(const sauchar_t *T, const saidx_t *PA, saidx_t *firs
 }
 
 /* Merge-backward with internal buffer. */
-static void ss_mergebackward(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *middle, saidx_t *last, saidx_t *buf, saidx_t depth) {
-  const saidx_t *p1, *p2;
-  saidx_t *a, *b, *c, *bufend;
-  saidx_t t;
-  saint_t r;
-  saint_t x;
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_mergebackward(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, int depth) {
+  const ResultT *p1, *p2;
+  ResultT *a, *b, *c, *bufend;
+  ResultT t;
+  int32_t r;
+  int32_t x;
 
   bufend = buf + (last - middle) - 1;
   ss_blockswap(buf, middle, last - middle);
@@ -602,12 +582,12 @@ static void ss_mergebackward(const sauchar_t *T, const saidx_t *PA, saidx_t *fir
 }
 
 /* D&C based merge. */
-static void ss_swapmerge(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *middle, saidx_t *last, saidx_t *buf, saidx_t bufsize, saidx_t depth) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_swapmerge(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, int bufsize, int depth) {
   struct stack_type {
-    saidx_t *a;
-    saidx_t *b;
-    saidx_t *c;
-    saint_t d;
+    ResultT *a;
+    ResultT *b;
+    ResultT *c;
+    int32_t d;
     constexpr operator auto() noexcept {
       return std::tie(a,b,c,d);
     }
@@ -627,9 +607,9 @@ static void ss_swapmerge(const sauchar_t *T, const saidx_t *PA, saidx_t *first, 
   };
   
   static_stack<stack_type, SS_SMERGE_STACKSIZE> stack;
-  saidx_t *l, *r, *lm, *rm;
-  saidx_t m, len, half;
-  saint_t check, next;
+  ResultT *l, *r, *lm, *rm;
+  ResultT m, len, half;
+  int32_t check, next;
 
   for(check = 0;;) {
     if((last - middle) <= bufsize) {
@@ -704,14 +684,14 @@ static void ss_swapmerge(const sauchar_t *T, const saidx_t *PA, saidx_t *first, 
 /*- Function -*/
 
 /* Substring sort */
-void sssort(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *last, saidx_t *buf, saidx_t bufsize, saidx_t depth, saidx_t n, saint_t lastsuffix) {
+template <typename CharT = unsigned char, typename ResultT = int> void sssort(const CharT *T, const ResultT *PA, ResultT *first, ResultT *last, ResultT *buf, int bufsize, int depth, int n, int32_t lastsuffix) {
   
-  saidx_t *a;
+  ResultT *a;
 #if SS_BLOCKSIZE != 0
-  saidx_t *b, *middle, *curbuf;
-  saidx_t j, k, curbufsize, limit;
+  ResultT *b, *middle, *curbuf;
+  int j, k, curbufsize, limit;
 #endif
-  saidx_t i;
+  int i;
 
   if(lastsuffix != 0) {
     ++first;
@@ -770,7 +750,7 @@ void sssort(const sauchar_t *T, const saidx_t *PA, saidx_t *first, saidx_t *last
 
   if(lastsuffix != 0) {
     /* Insert last type B* suffix. */
-    saidx_t PAi[2] = { PA[*(first - 1)], n - 2};
+    ResultT PAi[2] = { PA[*(first - 1)], n - 2};
     for(a = first, i = *(first - 1); (a < last) && ((*a < 0) || (0 < ss_compare(T, &(PAi[0]), PA + *a, depth))); ++a) {
       *(a - 1) = *a;
     }

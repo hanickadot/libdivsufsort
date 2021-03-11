@@ -1,4 +1,4 @@
 softTab = true
 tabSize = 2
 
-excludeInFolderSearch="{$excludeInFolderSearch,build,examples}"
+#excludeInFolderSearch="{$excludeInFolderSearch,build,examples}"

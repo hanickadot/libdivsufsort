@@ -35,32 +35,18 @@
 #if HAVE_CONFIG_H
 # include "config.hpp"
 #endif
-#include <assert.h>
-#include <stdio.h>
-#if HAVE_STRING_H
-# include <string.h>
-#endif
-#if HAVE_STDLIB_H
-# include <stdlib.h>
-#endif
-#if HAVE_MEMORY_H
-# include <memory.h>
-#endif
-#if HAVE_STDDEF_H
-# include <stddef.h>
-#endif
-#if HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#if HAVE_INTTYPES_H
-# include <inttypes.h>
-#else
-# if HAVE_STDINT_H
-#  include <stdint.h>
-# endif
-#endif
+#include <cassert>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <memory.h>
+#include <cstddef>
+#include <strings.h>
+#include <cinttypes>
+#include <cstdint>
+
+
 #if defined(BUILD_DIVSUFSORT64)
-# include "divsufsort64.hpp"
 # ifndef SAIDX_T
 #  define SAIDX_T
 #  define saidx_t saidx64_t
@@ -78,17 +64,10 @@
 # define sa_simplesearch sa_simplesearch64
 # define sssort sssort64
 # define trsort trsort64
-#else
-# include "divsufsort.hpp"
 #endif
 
 
 /*- Constants -*/
-template <typename CharT> static constexpr std::size_t alphabet_size = std::numeric_limits<CharT>::max() + 1;
-template <> static constexpr std::size_t alphabet_size<std::byte> = std::numeric_limits<uint8_t>::max() + 1;
-	
-template <typename CharT> static constexpr std::size_t bucket_A_size = alphabet_size<CharT>;
-template <typename CharT> static constexpr std::size_t bucket_B_size = alphabet_size<CharT> * alphabet_size<CharT>;
 
 //#define bucket_A_size (alphabet_size)
 //#define bucket_B_size (alphabet_size * alphabet_size)
@@ -139,9 +118,6 @@ template <typename CharT> static constexpr std::size_t bucket_B_size = alphabet_
 
 
 /*- Macros -*/
-
-#define STACK_PUSH5(_a, _b, _c, _d, _e) stack.push((_a), (_b), (_c), (_d), (_e))
-#define STACK_POP5(_a, _b, _c, _d, _e) stack.pop_into((_a), (_b), (_c), (_d), (_e))
 /* for divsufsort.c */
 #define BUCKET_A(_c0) bucket_A[(_c0)]
 #define BUCKET_B(_c0, _c1) (bucket_B[(_c1) * alphabet_size<CharT> + (_c0)])

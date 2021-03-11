@@ -130,8 +130,7 @@ note:
       for(c1 = alphabet_size<CharT> - 1; c0 < c1; j = i, --c1) {
         i = BUCKET_BSTAR(c0, c1);
         if(1 < (j - i)) {
-          sssort(T, PAb, SA + i, SA + j,
-                 buf, bufsize, 2, n, *(SA + i) == (m - 1));
+          sssort(T, PAb, SA + i, SA + j, buf, bufsize, 2, n, *(SA + i) == (m - 1));
         }
       }
     }

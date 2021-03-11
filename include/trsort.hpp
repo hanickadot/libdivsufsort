@@ -24,7 +24,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "divsufsort_private.hpp"
+#include "common.hpp"
 #include "lg_table.hpp"
 
 /*- Private Functions -*/

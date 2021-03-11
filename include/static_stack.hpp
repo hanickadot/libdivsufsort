@@ -1,3 +1,6 @@
+#ifndef STATIC_STACK_HPP
+#define STATIC_STACK_HPP
+
 #include <array>
 #include <cassert>
 #include <cstddef>
@@ -49,3 +52,5 @@ template <typename T, std::size_t N> struct static_stack {
 		std::tie(args...) = data[--usage];
 	}
 };
+
+#endif

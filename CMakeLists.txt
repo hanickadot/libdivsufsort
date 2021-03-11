@@ -85,10 +85,9 @@ add_definitions(-DHAVE_CONFIG_H=1 -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 ## Add subdirectories ##
 add_subdirectory(pkgconfig)
 add_subdirectory(include)
-add_subdirectory(lib)
-if(BUILD_EXAMPLES)
-  add_subdirectory(examples)
-endif(BUILD_EXAMPLES)
+#if(BUILD_EXAMPLES)
+#  add_subdirectory(examples)
+#endif(BUILD_EXAMPLES)
 
 ## Add 'uninstall' target ##
 CONFIGURE_FILE(
