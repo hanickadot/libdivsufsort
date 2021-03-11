@@ -277,7 +277,7 @@ construct_BWT(const sauchar_t *T, saidx_t *SA,
           assert(((s + 1) < n) && (T[s] <= T[s + 1]));
           assert(T[s - 1] <= T[s]);
           c0 = T[--s];
-          *j = ~((saidx_t)c0);
+          *j = ~(static_cast<saidx_t>(c0));
           if((0 < s) && (T[s - 1] > c0)) { s = ~s; }
           if(c0 != c2) {
             if(0 <= c2) { BUCKET_B(c2, c1) = k - SA; }
@@ -299,14 +299,14 @@ construct_BWT(const sauchar_t *T, saidx_t *SA,
   /* Construct the BWTed string by using
      the sorted order of type B suffixes. */
   k = SA + BUCKET_A(c2 = T[n - 1]);
-  *k++ = (T[n - 2] < c2) ? ~((saidx_t)T[n - 2]) : (n - 1);
+  *k++ = (T[n - 2] < c2) ? ~(static_cast<saidx_t>(T[n - 2])) : (n - 1);
   /* Scan the suffix array from left to right. */
   for(i = SA, j = SA + n, orig = SA; i < j; ++i) {
     if(0 < (s = *i)) {
       assert(T[s - 1] >= T[s]);
       c0 = T[--s];
       *i = c0;
-      if((0 < s) && (T[s - 1] < c0)) { s = ~((saidx_t)T[s - 1]); }
+      if((0 < s) && (T[s - 1] < c0)) { s = ~(static_cast<saidx_t>(T[s - 1])); }
       if(c0 != c2) {
         BUCKET_A(c2) = k - SA;
         k = SA + BUCKET_A(c2 = c0);
@@ -367,7 +367,7 @@ divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
   if((T == NULL) || (U == NULL) || (n < 0)) { return -1; }
   else if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
 
-  if((B = A) == NULL) { B = (saidx_t *)malloc((size_t)(n + 1) * sizeof(saidx_t)); }
+  if((B = A) == NULL) { B = (saidx_t *)malloc(static_cast<size_t>(n + 1) * sizeof(saidx_t)); }
   bucket_A = (saidx_t *)malloc(BUCKET_A_SIZE * sizeof(saidx_t));
   bucket_B = (saidx_t *)malloc(BUCKET_B_SIZE * sizeof(saidx_t));
 

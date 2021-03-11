@@ -66,7 +66,7 @@ bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA,
   if((A = SA) == NULL) {
     i = divbwt(T, U, NULL, n);
     if(0 <= i) { *idx = i; i = 0; }
-    return (saint_t)i;
+    return static_cast<saint_t>(i);
   }
 
   /* BW transform. */
@@ -77,7 +77,7 @@ bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA,
       t = A[i];
       if(0 <= p) {
         c = T[j];
-        U[j] = (j <= p) ? T[p] : (sauchar_t)A[p];
+        U[j] = (j <= p) ? T[p] : static_cast<sauchar_t>(A[p]);
         A[j] = c;
         j++;
       } else {
@@ -87,7 +87,7 @@ bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA,
     p = t - 1;
     if(0 <= p) {
       c = T[j];
-      U[j] = (j <= p) ? T[p] : (sauchar_t)A[p];
+      U[j] = (j <= p) ? T[p] : static_cast<sauchar_t>(A[p]);
       A[j] = c;
     } else {
       *idx = i;
@@ -126,7 +126,7 @@ inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A,
 
   if((B = A) == NULL) {
     /* Allocate n*sizeof(saidx_t) bytes of memory. */
-    if((B = (saidx_t *)malloc((size_t)n * sizeof(saidx_t))) == NULL) { return -2; }
+    if((B = (saidx_t *)malloc(static_cast<size_t>(n) * sizeof(saidx_t))) == NULL) { return -2; }
   }
 
   /* Inverse BW transform. */
@@ -136,7 +136,7 @@ inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A,
     p = C[c];
     if(0 < p) {
       C[c] = i;
-      D[d++] = (sauchar_t)c;
+      D[d++] = static_cast<sauchar_t>(c);
       i += p;
     }
   }
