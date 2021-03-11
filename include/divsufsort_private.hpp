@@ -27,6 +27,10 @@
 #ifndef _DIVSUFSORT_PRIVATE_H
 #define _DIVSUFSORT_PRIVATE_H 1
 
+#include <algorithm>
+#include <cstddef>
+#include <limits>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -83,18 +87,12 @@ extern "C" {
 
 
 /*- Constants -*/
-#if !defined(UINT8_MAX)
-# define UINT8_MAX (255)
-#endif /* UINT8_MAX */
-#if defined(ALPHABET_SIZE) && (ALPHABET_SIZE < 1)
-# undef ALPHABET_SIZE
-#endif
-#if !defined(ALPHABET_SIZE)
-# define ALPHABET_SIZE (UINT8_MAX + 1)
-#endif
-/* for divsufsort.c */
-#define BUCKET_A_SIZE (ALPHABET_SIZE)
-#define BUCKET_B_SIZE (ALPHABET_SIZE * ALPHABET_SIZE)
+static constexpr std::size_t ALPHABET_SIZE = std::numeric_limits<uint8_t>::max() + 1;
+static constexpr std::size_t BUCKET_A_SIZE = ALPHABET_SIZE;
+static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
+
+//#define BUCKET_A_SIZE (ALPHABET_SIZE)
+//#define BUCKET_B_SIZE (ALPHABET_SIZE * ALPHABET_SIZE)
 /* for sssort.c */
 #if defined(SS_INSERTIONSORT_THRESHOLD)
 # if SS_INSERTIONSORT_THRESHOLD < 1
@@ -143,13 +141,14 @@ extern "C" {
 
 /*- Macros -*/
 #ifndef SWAP
-# define SWAP(_a, _b) do { t = (_a); (_a) = (_b); (_b) = t; } while(0)
+#define SWAP(_a, _b) std::swap((_a), (_b))
+	//# define SWAP(_a, _b) do { t = (_a); (_a) = (_b); (_b) = t; } while(0)
 #endif /* SWAP */
 #ifndef MIN
-# define MIN(_a, _b) (((_a) < (_b)) ? (_a) : (_b))
+# define MIN(_a, _b) std::min((_a), (_b))
 #endif /* MIN */
 #ifndef MAX
-# define MAX(_a, _b) (((_a) > (_b)) ? (_a) : (_b))
+# define MAX(_a, _b) std::max((_a), (_b))
 #endif /* MAX */
 #define STACK_PUSH(_a, _b, _c, _d)\
   do {\
