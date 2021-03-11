@@ -142,20 +142,8 @@ static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 
 /*- Macros -*/
 
-#define STACK_PUSH5(_a, _b, _c, _d, _e)\
-  do {\
-    assert(ssize < STACK_SIZE);\
-    stack[ssize].a = (_a), stack[ssize].b = (_b),\
-    stack[ssize].c = (_c), stack[ssize].d = (_d), stack[ssize++].e = (_e);\
-  } while(0)
-#define STACK_POP(_a, _b, _c, _d) std::tie((_a), (_b), (_c), (_d)) = stack.pop()
-#define STACK_POP5(_a, _b, _c, _d, _e)\
-  do {\
-    assert(0 <= ssize);\
-    if(ssize == 0) { return; }\
-    (_a) = stack[--ssize].a, (_b) = stack[ssize].b,\
-    (_c) = stack[ssize].c, (_d) = stack[ssize].d, (_e) = stack[ssize].e;\
-  } while(0)
+#define STACK_PUSH5(_a, _b, _c, _d, _e) stack.push((_a), (_b), (_c), (_d), (_e))
+#define STACK_POP5(_a, _b, _c, _d, _e) stack.pop_into((_a), (_b), (_c), (_d), (_e))
 /* for divsufsort.c */
 #define BUCKET_A(_c0) bucket_A[(_c0)]
 #if ALPHABET_SIZE == 256
