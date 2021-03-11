@@ -49,10 +49,7 @@ sort_typeBstar(const sauchar_t *T, saidx_t *SA,
   saint_t d0, d1;
   int tmp;
 #endif
-
-  /* Initialize bucket arrays. */
-  for(i = 0; i < BUCKET_A_SIZE; ++i) { bucket_A[i] = 0; }
-  for(i = 0; i < BUCKET_B_SIZE; ++i) { bucket_B[i] = 0; }
+  // expects both buckets to be zero-initialized
 
   /* Count the number of occurrences of the first one or two characters of each
      type A, B and B* suffix. Moreover, store the beginning position of all
@@ -287,10 +284,8 @@ construct_BWT(const sauchar_t *T, saidx_t *SA,
           *k-- = s;
         } else if(s != 0) {
           *j = ~s;
-#ifndef NDEBUG
         } else {
           assert(T[s] == c1);
-#endif
         }
       }
     }
@@ -330,28 +325,24 @@ construct_BWT(const sauchar_t *T, saidx_t *SA,
 
 saint_t
 divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n) {
-  saidx_t m;
-  saint_t err = 0;
-
   /* Check arguments. */
   if((T == nullptr) || (SA == nullptr) || (n < 0)) { return -1; }
   else if(n == 0) { return 0; }
   else if(n == 1) { SA[0] = 0; return 0; }
-  else if(n == 2) { m = (T[0] < T[1]); SA[m ^ 1] = 0, SA[m] = 1; return 0; }
+  else if(n == 2) { bool ordered = (T[0] < T[1]); SA[ordered ^ 1] = 0, SA[ordered] = 1; return 0; }
 
-  std::array<saidx_t, BUCKET_A_SIZE> bucket_A;
-  std::array<saidx_t, BUCKET_B_SIZE> bucket_B;
+  std::array<saidx_t, BUCKET_A_SIZE> bucket_A{};
+  std::array<saidx_t, BUCKET_B_SIZE> bucket_B{};
 
-  m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
+  saidx_t m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
   construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
 		
-  return err;
+  return 0;
 }
 
 saidx_t
 divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
   saidx_t *B;
-  saidx_t m, pidx, i;
 
   /* Check arguments. */
   if((T == nullptr) || (U == nullptr) || (n < 0)) { return -1; }
@@ -361,16 +352,17 @@ divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
     B = new saidx_t[n + 1]{};
   }
 	
-	std::array<saidx_t, BUCKET_A_SIZE> bucket_A;
-	std::array<saidx_t, BUCKET_B_SIZE> bucket_B;
+	std::array<saidx_t, BUCKET_A_SIZE> bucket_A{};
+	std::array<saidx_t, BUCKET_B_SIZE> bucket_B{};
 
   /* Burrows-Wheeler Transform. */
-  m = sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
-  pidx = construct_BWT(T, B, bucket_A.data(), bucket_B.data(), n, m);
+  saidx_t m = sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
+  saidx_t pidx = construct_BWT(T, B, bucket_A.data(), bucket_B.data(), n, m);
 
   /* Copy to output string. */
   U[0] = T[n - 1];
-  for(i = 0; i < pidx; ++i) { U[i + 1] = static_cast<sauchar_t>(B[i]); }
+  saidx_t i = 0;
+  for(; i < pidx; ++i) { U[i + 1] = static_cast<sauchar_t>(B[i]); }
   for(i += 1; i < n; ++i) { U[i] = static_cast<sauchar_t>(B[i]); }
   pidx += 1;
 
