@@ -333,7 +333,7 @@ ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
       if(1 < (last - first)) { ss_insertionsort(T, PA, first, last, depth); }
 #endif
       if (stack.size() == 0) return;
-      STACK_POP(first, last, depth, limit);
+      std::tie(first, last, depth, limit) = stack.pop();
       continue;
     }
 
@@ -352,14 +352,14 @@ ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
       }
       if((a - first) <= (last - a)) {
         if(1 < (a - first)) {
-          STACK_PUSH(a, last, depth, -1);
+          stack.push(a, last, depth, -1);
           last = a, depth += 1, limit = ss_ilg(a - first);
         } else {
           first = a, limit = -1;
         }
       } else {
         if(1 < (last - a)) {
-          STACK_PUSH(first, a, depth + 1, ss_ilg(a - first));
+          stack.push(first, a, depth + 1, ss_ilg(a - first));
           first = a, limit = -1;
         } else {
           last = a, depth += 1, limit = ss_ilg(a - first);
@@ -409,30 +409,30 @@ ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
 
       if((a - first) <= (last - c)) {
         if((last - c) <= (c - b)) {
-          STACK_PUSH(b, c, depth + 1, ss_ilg(c - b));
-          STACK_PUSH(c, last, depth, limit);
+          stack.push(b, c, depth + 1, ss_ilg(c - b));
+          stack.push(c, last, depth, limit);
           last = a;
         } else if((a - first) <= (c - b)) {
-          STACK_PUSH(c, last, depth, limit);
-          STACK_PUSH(b, c, depth + 1, ss_ilg(c - b));
+          stack.push(c, last, depth, limit);
+          stack.push(b, c, depth + 1, ss_ilg(c - b));
           last = a;
         } else {
-          STACK_PUSH(c, last, depth, limit);
-          STACK_PUSH(first, a, depth, limit);
+          stack.push(c, last, depth, limit);
+          stack.push(first, a, depth, limit);
           first = b, last = c, depth += 1, limit = ss_ilg(c - b);
         }
       } else {
         if((a - first) <= (c - b)) {
-          STACK_PUSH(b, c, depth + 1, ss_ilg(c - b));
-          STACK_PUSH(first, a, depth, limit);
+          stack.push(b, c, depth + 1, ss_ilg(c - b));
+          stack.push(first, a, depth, limit);
           first = c;
         } else if((last - c) <= (c - b)) {
-          STACK_PUSH(first, a, depth, limit);
-          STACK_PUSH(b, c, depth + 1, ss_ilg(c - b));
+          stack.push(first, a, depth, limit);
+          stack.push(b, c, depth + 1, ss_ilg(c - b));
           first = c;
         } else {
-          STACK_PUSH(first, a, depth, limit);
-          STACK_PUSH(c, last, depth, limit);
+          stack.push(first, a, depth, limit);
+          stack.push(c, last, depth, limit);
           first = b, last = c, depth += 1, limit = ss_ilg(c - b);
         }
       }
@@ -661,17 +661,6 @@ void
 ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
              saidx_t *first, saidx_t *middle, saidx_t *last,
              saidx_t *buf, saidx_t bufsize, saidx_t depth) {
-#define GETIDX(a) ((0 <= (a)) ? (a) : (~(a)))
-#define MERGE_CHECK(a, b, c)\
-  do {\
-    if(((c) & 1) ||\
-       (((c) & 2) && (ss_compare(T, PA + GETIDX(*((a) - 1)), PA + *(a), depth) == 0))) {\
-      *(a) = ~*(a);\
-    }\
-    if(((c) & 4) && ((ss_compare(T, PA + GETIDX(*((b) - 1)), PA + *(b), depth) == 0))) {\
-      *(b) = ~*(b);\
-    }\
-  } while(0)
   struct stack_type {
     saidx_t *a;
     saidx_t *b;
@@ -681,6 +670,20 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       return std::tie(a,b,c,d);
     }
   };
+  
+  auto get_idx = [](auto a) {
+    return (0 <= a) ? a : ~a;
+  };
+  
+  auto merge_check = [&](auto a, auto b, auto c) {
+    if ((c & 1) || ((c & 2) && (ss_compare(T, PA + get_idx(*(a - 1)), PA + *a, depth) == 0))) {
+      *a = ~*a;
+    }
+    if ((c & 4) && ((ss_compare(T, PA + get_idx(*(b - 1)), PA + *b, depth) == 0))) {
+      *b = ~*b;
+    }
+  };
+  
   static_stack<stack_type, SS_SMERGE_STACKSIZE> stack;
   saidx_t *l, *r, *lm, *rm;
   saidx_t m, len, half;
@@ -691,9 +694,9 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       if((first < middle) && (middle < last)) {
         ss_mergebackward(T, PA, first, middle, last, buf, depth);
       }
-      MERGE_CHECK(first, last, check);
+      merge_check(first, last, check);
       if (stack.size() == 0) return;
-      STACK_POP(first, middle, last, check);
+      std::tie(first, middle, last, check) = stack.pop();
       continue;
     }
 
@@ -701,17 +704,17 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       if(first < middle) {
         ss_mergeforward(T, PA, first, middle, last, buf, depth);
       }
-      MERGE_CHECK(first, last, check);
+      merge_check(first, last, check);
       if (stack.size() == 0) return;
-      STACK_POP(first, middle, last, check);
+      std::tie(first, middle, last, check) = stack.pop();
       continue;
     }
 
     for(m = 0, len = std::min(middle - first, last - middle), half = len >> 1;
         0 < len;
         len = half, half >>= 1) {
-      if(ss_compare(T, PA + GETIDX(*(middle + m + half)),
-                       PA + GETIDX(*(middle - m - half - 1)), depth) < 0) {
+      if(ss_compare(T, PA + get_idx(*(middle + m + half)),
+                       PA + get_idx(*(middle - m - half - 1)), depth) < 0) {
         m += half + 1;
         half -= (len & 1) ^ 1;
       }
@@ -733,20 +736,20 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       }
 
       if((l - first) <= (last - r)) {
-        STACK_PUSH(r, rm, last, (next & 3) | (check & 4));
+        stack.push(r, rm, last, (next & 3) | (check & 4));
         middle = lm, last = l, check = (check & 3) | (next & 4);
       } else {
         if((next & 2) && (r == middle)) { next ^= 6; }
-        STACK_PUSH(first, lm, l, (check & 3) | (next & 4));
+        stack.push(first, lm, l, (check & 3) | (next & 4));
         first = r, middle = rm, check = (next & 3) | (check & 4);
       }
     } else {
-      if(ss_compare(T, PA + GETIDX(*(middle - 1)), PA + *middle, depth) == 0) {
+      if(ss_compare(T, PA + get_idx(*(middle - 1)), PA + *middle, depth) == 0) {
         *middle = ~*middle;
       }
-      MERGE_CHECK(first, last, check);
+      merge_check(first, last, check);
       if (stack.size() == 0) return;
-      STACK_POP(first, middle, last, check);
+      std::tie(first, middle, last, check) = stack.pop();
     }
   }
 }

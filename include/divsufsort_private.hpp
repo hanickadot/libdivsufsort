@@ -142,7 +142,6 @@ static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 
 /*- Macros -*/
 
-#define STACK_PUSH(_a, _b, _c, _d) stack.push((_a), (_b), (_c), (_d));
 #define STACK_PUSH5(_a, _b, _c, _d, _e)\
   do {\
     assert(ssize < STACK_SIZE);\
