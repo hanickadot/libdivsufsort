@@ -24,7 +24,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "divsufsort_private.h"
+#include "divsufsort_private.hpp"
 #ifdef _OPENMP
 # include <omp.h>
 #endif

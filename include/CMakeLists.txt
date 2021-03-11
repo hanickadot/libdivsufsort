@@ -39,10 +39,10 @@ if(BUILD_EXAMPLES)
 
   ## Checks for large file support ##
   check_lfs(WITH_LFS)
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/lfs.h.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lfs.h" @ONLY)
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/lfs.hpp.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lfs.hpp" @ONLY)
 endif(BUILD_EXAMPLES)
 
-## generate config.h ##
+## generate config.hpp ##
 check_function_keywords("inline;__inline;__inline__;__declspec(dllexport);__declspec(dllimport)")
 if(HAVE_INLINE)
   set(INLINE "inline")
@@ -53,7 +53,7 @@ elseif(HAVE___INLINE__)
 else(HAVE_INLINE)
   set(INLINE "")
 endif(HAVE_INLINE)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake" "${CMAKE_CURRENT_BINARY_DIR}/config.h")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.cmake" "${CMAKE_CURRENT_BINARY_DIR}/config.hpp")
 
 ## Checks for types ##
 # sauchar_t (8bit)
@@ -149,14 +149,14 @@ set(W64BIT "")
 set(SAINDEX_TYPE "${SAINT32_TYPE}")
 set(SAINDEX_PRId "${SAINT32_PRId}")
 set(SAINT_PRId "${SAINT32_PRId}")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/divsufsort.h.cmake"
-               "${CMAKE_CURRENT_BINARY_DIR}/divsufsort.h" @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/divsufsort.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/divsufsort.hpp.cmake"
+               "${CMAKE_CURRENT_BINARY_DIR}/divsufsort.hpp" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/divsufsort.hpp" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 if(BUILD_DIVSUFSORT64)
   set(W64BIT "64")
   set(SAINDEX_TYPE "${SAINT64_TYPE}")
   set(SAINDEX_PRId "${SAINT64_PRId}")
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/divsufsort.h.cmake"
-                 "${CMAKE_CURRENT_BINARY_DIR}/divsufsort64.h" @ONLY)
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/divsufsort64.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/divsufsort.hpp.cmake"
+                 "${CMAKE_CURRENT_BINARY_DIR}/divsufsort64.hpp" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/divsufsort64.hpp" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif(BUILD_DIVSUFSORT64)

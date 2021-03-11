@@ -1,8 +1,13 @@
+# libdivsufsort++
+
+libdivsufsort++ is port to modern C++ with templates and everything :)
+
 # libdivsufsort
 
 libdivsufsort is a software library that implements a lightweight suffix array construction algorithm.
 
 ## News
+* 2021-03-11: The project was forked from [libdivsufsort](https://github.com/y-256/libdivsufsort)
 * 2015-03-21: The project has moved from [Google Code](http://code.google.com/p/libdivsufsort/) to [GitHub](https://github.com/y-256/libdivsufsort)
 
 ## Introduction
