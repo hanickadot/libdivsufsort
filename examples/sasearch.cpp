@@ -51,7 +51,6 @@
 # include <fcntl.h>
 #endif
 #include <divsufsort.hpp>
-#include "lfs.hpp"
 
 
 static

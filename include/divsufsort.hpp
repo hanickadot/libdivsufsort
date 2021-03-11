@@ -24,9 +24,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "divsufsort_private.hpp"
 #include "sssort.hpp"
 #include "trsort.hpp"
+#include "utils.hpp"
+#include <span>
+#include <vector>
 #ifdef _OPENMP
 # include <omp.h>
 #endif
@@ -34,17 +36,21 @@
 
 /*- Private Functions -*/
 
+#define BUCKET_A(_c0) bucket_A[(_c0)]
+#define BUCKET_B(_c0, _c1) (bucket_B[(_c1) * alphabet_size<CharT> + (_c0)])
+#define BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * alphabet_size<CharT> + (_c1)])
+
 /* Sorts suffixes of type B*. */
-template <typename CharT = sauchar_t, typename ResultT = saidx_t> static saidx_t sort_typeBstar(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, saidx_t n) {
-  saidx_t *PAb, *ISAb, *buf;
+template <typename CharT = unsigned char, typename ResultT = ssize_t> static ResultT sort_typeBstar(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n) {
+  ResultT *PAb, *ISAb, *buf;
 #ifdef _OPENMP
-  saidx_t *curbuf;
-  saidx_t l;
+  ResultT *curbuf;
+  ResultT l;
 #endif
-  saidx_t i, j, k, t, m, bufsize;
-  saint_t c0, c1;
+  ResultT i, j, k, t, m, bufsize;
+  int32_t c0, c1;
 #ifdef _OPENMP
-  saint_t d0, d1;
+  int32_t d0, d1;
   int tmp;
 #endif
   // expects both buckets to be zero-initialized
@@ -130,7 +136,7 @@ note:
       for(c1 = alphabet_size<CharT> - 1; c0 < c1; j = i, --c1) {
         i = BUCKET_BSTAR(c0, c1);
         if(1 < (j - i)) {
-          sssort(T, PAb, SA + i, SA + j, buf, bufsize, 2, n, *(SA + i) == (m - 1));
+          sssort<CharT, ResultT>(T, PAb, SA + i, SA + j, buf, bufsize, 2, n, *(SA + i) == (m - 1));
         }
       }
     }
@@ -150,7 +156,7 @@ note:
     }
 
     /* Construct the inverse suffix array of type B* suffixes using trsort. */
-    trsort(ISAb, SA, m, 1);
+    trsort<ResultT>(ISAb, SA, m, 1);
 
     /* Set the sorted order of tyoe B* suffixes. */
     for(i = n - 1, j = m, c0 = T[n - 1]; 0 <= i;) {
@@ -184,10 +190,10 @@ note:
 }
 
 /* Constructs the suffix array by using the sorted order of type B* suffixes. */
-template <typename CharT = sauchar_t, typename ResultT = saidx_t> static void construct_SA(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, saidx_t n, saidx_t m) {
-  saidx_t *i, *j, *k;
-  saidx_t s;
-  saint_t c0, c1, c2;
+template <typename CharT = unsigned char, typename ResultT = ssize_t> static void construct_SA(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
+  ResultT *i, *j, *k;
+  ResultT s;
+  int32_t c0, c1, c2;
 
   if(0 < m) {
     /* Construct the sorted order of type B suffixes by using
@@ -244,10 +250,10 @@ template <typename CharT = sauchar_t, typename ResultT = saidx_t> static void co
 
 /* Constructs the burrows-wheeler transformed string directly
    by using the sorted order of type B* suffixes. */
-template <typename CharT = sauchar_t, typename ResultT = saidx_t> static saidx_t construct_BWT(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, saidx_t n, saidx_t m) {
-  saidx_t *i, *j, *k, *orig;
-  saidx_t s;
-  saint_t c0, c1, c2;
+template <typename CharT = unsigned char, typename ResultT = ssize_t> static ResultT construct_BWT(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
+  ResultT *i, *j, *k, *orig;
+  ResultT s;
+  int32_t c0, c1, c2;
 
   if(0 < m) {
     /* Construct the sorted order of type B suffixes by using
@@ -263,7 +269,7 @@ template <typename CharT = sauchar_t, typename ResultT = saidx_t> static saidx_t
           assert(((s + 1) < n) && (T[s] <= T[s + 1]));
           assert(T[s - 1] <= T[s]);
           c0 = T[--s];
-          *j = ~(static_cast<saidx_t>(c0));
+          *j = ~(static_cast<ResultT>(c0));
           if((0 < s) && (T[s - 1] > c0)) { s = ~s; }
           if(c0 != c2) {
             if(0 <= c2) { BUCKET_B(c2, c1) = k - SA; }
@@ -283,14 +289,14 @@ template <typename CharT = sauchar_t, typename ResultT = saidx_t> static saidx_t
   /* Construct the BWTed string by using
      the sorted order of type B suffixes. */
   k = SA + BUCKET_A(c2 = T[n - 1]);
-  *k++ = (T[n - 2] < c2) ? ~(static_cast<saidx_t>(T[n - 2])) : (n - 1);
+  *k++ = (T[n - 2] < c2) ? ~(static_cast<ResultT>(T[n - 2])) : (n - 1);
   /* Scan the suffix array from left to right. */
   for(i = SA, j = SA + n, orig = SA; i < j; ++i) {
     if(0 < (s = *i)) {
       assert(T[s - 1] >= T[s]);
       c0 = T[--s];
       *i = c0;
-      if((0 < s) && (T[s - 1] < c0)) { s = ~(static_cast<saidx_t>(T[s - 1])); }
+      if((0 < s) && (T[s - 1] < c0)) { s = ~(static_cast<ResultT>(T[s - 1])); }
       if(c0 != c2) {
         BUCKET_A(c2) = k - SA;
         k = SA + BUCKET_A(c2 = c0);
@@ -312,7 +318,7 @@ template <typename CharT = sauchar_t, typename ResultT = saidx_t> static saidx_t
 
 /*- Function -*/
 
-template <typename CharT = sauchar_t, typename ResultT = saidx_t> saint_t divsufsort(const CharT *T, ResultT *SA, saidx_t n) {
+template <typename CharT = unsigned char, typename ResultT = ssize_t> int divsufsort(const CharT *T, ResultT *SA, no_deduce<ResultT> n) {
   /* Check arguments. */
   if((T == nullptr) || (SA == nullptr) || (n < 0)) { return -1; }
   else if(n == 0) { return 0; }
@@ -322,35 +328,44 @@ template <typename CharT = sauchar_t, typename ResultT = saidx_t> saint_t divsuf
   std::array<ResultT, bucket_A_size<CharT>> bucket_A{};
   std::array<ResultT, bucket_B_size<CharT>> bucket_B{};
 
-  saidx_t m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
+  ResultT m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
   construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
 		
   return 0;
 }
 
-template <typename CharT = sauchar_t, typename ResultT = saidx_t> saidx_t divbwt(const CharT *T, CharT *U, ResultT *A, saidx_t n) {
-  saidx_t *B;
+template <typename ResultT = ssize_t, typename CharT = unsigned char> auto divsufsort(std::span<const CharT> T) -> std::vector<ResultT> {
+	auto result = std::vector<ResultT>(T.size());
+	
+	[[maybe_unused]] int rc = divsufsort(T.data(), result.data(), T.size());
+	assert(rc);
+	
+	return result;
+}
+
+template <typename CharT = unsigned char, typename ResultT = ssize_t> ResultT divbwt(const CharT *T, CharT *U, ResultT *A, no_deduce<ResultT> n) {
+  ResultT *B;
 
   /* Check arguments. */
   if((T == nullptr) || (U == nullptr) || (n < 0)) { return -1; }
   else if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
 
   if((B = A) == nullptr) { 
-    B = new saidx_t[n + 1]{};
+    B = new ResultT[n + 1]{};
   }
 	
-	std::array<saidx_t, bucket_A_size<sauchar_t>> bucket_A{};
-	std::array<saidx_t, bucket_B_size<sauchar_t>> bucket_B{};
+	std::array<ResultT, bucket_A_size<CharT>> bucket_A{};
+	std::array<ResultT, bucket_B_size<CharT>> bucket_B{};
 
   /* Burrows-Wheeler Transform. */
-  saidx_t m = sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
-  saidx_t pidx = construct_BWT(T, B, bucket_A.data(), bucket_B.data(), n, m);
+  ResultT m = sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
+  ResultT pidx = construct_BWT(T, B, bucket_A.data(), bucket_B.data(), n, m);
 
   /* Copy to output string. */
   U[0] = T[n - 1];
-  saidx_t i = 0;
-  for(; i < pidx; ++i) { U[i + 1] = static_cast<sauchar_t>(B[i]); }
-  for(i += 1; i < n; ++i) { U[i] = static_cast<sauchar_t>(B[i]); }
+  ResultT i = 0;
+  for(; i < pidx; ++i) { U[i + 1] = static_cast<CharT>(B[i]); }
+  for(i += 1; i < n; ++i) { U[i] = static_cast<CharT>(B[i]); }
   pidx += 1;
 
   if(A == nullptr) { delete[] B; }
@@ -359,5 +374,5 @@ template <typename CharT = sauchar_t, typename ResultT = saidx_t> saidx_t divbwt
 }
 
 const char * divsufsort_version(void) {
-  return PROJECT_VERSION_FULL;
+  return "1.0";
 }

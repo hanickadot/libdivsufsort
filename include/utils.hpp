@@ -24,14 +24,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "divsufsort_private.hpp"
+#include "common.hpp"
 
 
 /*- Private Function -*/
 
 /* Binary search for inverse bwt. */
-static saidx_t binarysearch_lower(const saidx_t *A, saidx_t size, saidx_t value) {
-  saidx_t half, i;
+template <typename CharT, typename ResultT> static ResultT binarysearch_lower(const ResultT *A, ResultT size, ResultT value) {
+  ResultT half, i;
   for(i = 0, half = size >> 1;
       0 < size;
       size = half, half >>= 1) {
@@ -47,9 +47,9 @@ static saidx_t binarysearch_lower(const saidx_t *A, saidx_t size, saidx_t value)
 /*- Functions -*/
 
 /* Burrows-Wheeler transform. */
-saint_t bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA, saidx_t n, saidx_t *idx) {
-  saidx_t *A, i, j, p, t;
-  saint_t c;
+template <typename CharT, typename ResultT> int32_t bw_transform(const CharT *T, CharT *U, ResultT *SA, ResultT n, ResultT *idx) {
+  ResultT *A, i, j, p, t;
+  int32_t c;
 
   /* Check arguments. */
   if((T == nullptr) || (U == nullptr) || (n < 0) || (idx == nullptr)) { return -1; }
@@ -62,7 +62,7 @@ saint_t bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA, saidx_t n, s
   if((A = SA) == nullptr) {
     i = divbwt(T, U, nullptr, n);
     if(0 <= i) { *idx = i; i = 0; }
-    return static_cast<saint_t>(i);
+    return static_cast<int32_t>(i);
   }
 
   /* BW transform. */
@@ -73,7 +73,7 @@ saint_t bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA, saidx_t n, s
       t = A[i];
       if(0 <= p) {
         c = T[j];
-        U[j] = (j <= p) ? T[p] : static_cast<sauchar_t>(A[p]);
+        U[j] = (j <= p) ? T[p] : static_cast<CharT>(A[p]);
         A[j] = c;
         j++;
       } else {
@@ -83,7 +83,7 @@ saint_t bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA, saidx_t n, s
     p = t - 1;
     if(0 <= p) {
       c = T[j];
-      U[j] = (j <= p) ? T[p] : static_cast<sauchar_t>(A[p]);
+      U[j] = (j <= p) ? T[p] : static_cast<CharT>(A[p]);
       A[j] = c;
     } else {
       *idx = i;
@@ -104,12 +104,12 @@ saint_t bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA, saidx_t n, s
 }
 
 /* Inverse Burrows-Wheeler transform. */
-saint_t inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n, saidx_t idx) {
-  saidx_t C[ALPHABET_SIZE];
-  sauchar_t D[ALPHABET_SIZE];
-  saidx_t *B;
-  saidx_t i, p;
-  saint_t c, d;
+template <typename CharT, typename ResultT> int32_t inverse_bw_transform(const CharT *T, CharT *U, ResultT *A, ResultT n, ResultT idx) {
+  ResultT C[alphabet_size<CharT>];
+  CharT D[alphabet_size<CharT>];
+  ResultT *B;
+  ResultT i, p;
+  int32_t c, d;
 
   /* Check arguments. */
   if((T == nullptr) || (U == nullptr) || (n < 0) || (idx < 0) ||
@@ -119,21 +119,21 @@ saint_t inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx
   if(n <= 1) { return 0; }
 
   if((B = A) == nullptr) {
-    /* Allocate n*sizeof(saidx_t) bytes of memory. */
-    B = new saidx_t[n];
+    /* Allocate n*sizeof(ResultT) bytes of memory. */
+    B = new ResultT[n];
     if (B == nullptr) {
       return -2;
     }
   }
 
   /* Inverse BW transform. */
-  for(c = 0; c < ALPHABET_SIZE; ++c) { C[c] = 0; }
+  for(c = 0; c < alphabet_size<CharT>; ++c) { C[c] = 0; }
   for(i = 0; i < n; ++i) { ++C[T[i]]; }
-  for(c = 0, d = 0, i = 0; c < ALPHABET_SIZE; ++c) {
+  for(c = 0, d = 0, i = 0; c < alphabet_size<CharT>; ++c) {
     p = C[c];
     if(0 < p) {
       C[c] = i;
-      D[d++] = static_cast<sauchar_t>(c);
+      D[d++] = static_cast<CharT>(c);
       i += p;
     }
   }
@@ -154,10 +154,10 @@ saint_t inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx
 }
 
 /* Checks the suffix array SA of the string T. */
-saint_t sufcheck(const sauchar_t *T, const saidx_t *SA, saidx_t n, saint_t verbose) {
-  saidx_t C[ALPHABET_SIZE];
-  saidx_t i, p, q, t;
-  saint_t c;
+template <typename CharT, typename ResultT> int32_t sufcheck(const CharT *T, const ResultT *SA, no_deduce<ResultT> n, int32_t verbose) {
+  ResultT C[alphabet_size<CharT>];
+  ResultT i, p, q, t;
+  int32_t c;
 
   if(verbose) { fprintf(stderr, "sufcheck: "); }
 
@@ -175,8 +175,8 @@ saint_t sufcheck(const sauchar_t *T, const saidx_t *SA, saidx_t n, saint_t verbo
   for(i = 0; i < n; ++i) {
     if((SA[i] < 0) || (n <= SA[i])) {
       if(verbose) {
-        fprintf(stderr, "Out of the range [0,%" PRIdSAIDX_T "].\n"
-                        "  SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "\n",
+        fprintf(stderr, "Out of the range [0,%zu].\n"
+                        "  SA[%zu]=%zu\n",
                         n - 1, i, SA[i]);
       }
       return -2;
@@ -188,8 +188,8 @@ saint_t sufcheck(const sauchar_t *T, const saidx_t *SA, saidx_t n, saint_t verbo
     if(T[SA[i - 1]] > T[SA[i]]) {
       if(verbose) {
         fprintf(stderr, "Suffixes in wrong order.\n"
-                        "  T[SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "]=%d"
-                        " > T[SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "]=%d\n",
+                        "  T[SA[%zu]=%zu]=%d"
+                        " > T[SA[%zu]=%zu]=%d\n",
                         i - 1, SA[i - 1], T[SA[i - 1]], i, SA[i], T[SA[i]]);
       }
       return -3;
@@ -197,9 +197,9 @@ saint_t sufcheck(const sauchar_t *T, const saidx_t *SA, saidx_t n, saint_t verbo
   }
 
   /* check suffixes. */
-  for(i = 0; i < ALPHABET_SIZE; ++i) { C[i] = 0; }
+  for(i = 0; i < alphabet_size<CharT>; ++i) { C[i] = 0; }
   for(i = 0; i < n; ++i) { ++C[T[i]]; }
-  for(i = 0, p = 0; i < ALPHABET_SIZE; ++i) {
+  for(i = 0, p = 0; i < alphabet_size<CharT>; ++i) {
     t = C[i];
     C[i] = p;
     p += t;
@@ -219,8 +219,8 @@ saint_t sufcheck(const sauchar_t *T, const saidx_t *SA, saidx_t n, saint_t verbo
     if((t < 0) || (p != SA[t])) {
       if(verbose) {
         fprintf(stderr, "Suffix in wrong position.\n"
-                        "  SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T " or\n"
-                        "  SA[%" PRIdSAIDX_T "]=%" PRIdSAIDX_T "\n",
+                        "  SA[%zu]=%zu or\n"
+                        "  SA[%zu]=%zu\n",
                         t, (0 <= t) ? SA[t] : -1, i, SA[i]);
       }
       return -4;
@@ -236,21 +236,21 @@ saint_t sufcheck(const sauchar_t *T, const saidx_t *SA, saidx_t n, saint_t verbo
 }
 
 
-static int _compare(const sauchar_t *T, saidx_t Tsize, const sauchar_t *P, saidx_t Psize, saidx_t suf, saidx_t *match) {
-  saidx_t i, j;
-  saint_t r;
+template <typename CharT, typename ResultT> static int32_t _compare(const CharT *T, ResultT Tsize, const CharT *P, ResultT Psize, ResultT suf, ResultT *match) {
+  ResultT i, j;
+  int32_t r;
   for(i = suf + *match, j = *match, r = 0; (i < Tsize) && (j < Psize) && ((r = T[i] - P[j]) == 0); ++i, ++j) { }
   *match = j;
   return (r == 0) ? -(j != Psize) : r;
 }
 
 /* Search for the pattern P in the string T. */
-saidx_t sa_search(const sauchar_t *T, saidx_t Tsize, const sauchar_t *P, saidx_t Psize, const saidx_t *SA, saidx_t SAsize, saidx_t *idx) {
-  saidx_t size, lsize, rsize, half;
-  saidx_t match, lmatch, rmatch;
-  saidx_t llmatch, lrmatch, rlmatch, rrmatch;
-  saidx_t i, j, k;
-  saint_t r;
+template <typename CharT, typename ResultT> ResultT sa_search(const CharT *T, ResultT Tsize, const CharT *P, ResultT Psize, const ResultT *SA, ResultT SAsize, ResultT *idx) {
+  ResultT size, lsize, rsize, half;
+  ResultT match, lmatch, rmatch;
+  ResultT llmatch, lrmatch, rlmatch, rrmatch;
+  ResultT i, j, k;
+  int32_t r;
 
   if(idx != nullptr) { *idx = -1; }
   if((T == nullptr) || (P == nullptr) || (SA == nullptr) || (Tsize < 0) || (Psize < 0) || (SAsize < 0)) { return -1; }
@@ -310,10 +310,10 @@ saidx_t sa_search(const sauchar_t *T, saidx_t Tsize, const sauchar_t *P, saidx_t
 }
 
 /* Search for the character c in the string T. */
-saidx_t sa_simplesearch(const sauchar_t *T, saidx_t Tsize, const saidx_t *SA, saidx_t SAsize, saint_t c, saidx_t *idx) {
-  saidx_t size, lsize, rsize, half;
-  saidx_t i, j, k, p;
-  saint_t r;
+template <typename CharT, typename ResultT> ResultT sa_simplesearch(const CharT *T, ResultT Tsize, const ResultT *SA, ResultT SAsize, int32_t c, ResultT *idx) {
+  ResultT size, lsize, rsize, half;
+  ResultT i, j, k, p;
+  int32_t r;
 
   if(idx != nullptr) { *idx = -1; }
   if((T == nullptr) || (SA == nullptr) || (Tsize < 0) || (SAsize < 0)) { return -1; }

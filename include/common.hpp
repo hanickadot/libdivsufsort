@@ -85,10 +85,16 @@ static constexpr inline int32_t sqq_table[256] = {
 247, 248, 248, 249, 249, 250, 250, 251, 251, 252, 252, 253, 253, 254, 254, 255
 };
 
-template <typename CharT> static constexpr std::size_t alphabet_size = std::numeric_limits<CharT>::max() + 1;
-template <> static constexpr std::size_t alphabet_size<std::byte> = std::numeric_limits<uint8_t>::max() + 1;
+template <typename T> struct identity_t {
+	using type = T;
+};
+
+template <typename T> using no_deduce = identity_t<T>::type;
+
+template <typename CharT> constexpr std::size_t alphabet_size = std::numeric_limits<CharT>::max() + 1;
+template <> constexpr std::size_t alphabet_size<std::byte> = std::numeric_limits<uint8_t>::max() + 1;
 	
-template <typename CharT> static constexpr std::size_t bucket_A_size = alphabet_size<CharT>;
-template <typename CharT> static constexpr std::size_t bucket_B_size = alphabet_size<CharT> * alphabet_size<CharT>;
+template <typename CharT> constexpr std::size_t bucket_A_size = alphabet_size<CharT>;
+template <typename CharT> constexpr std::size_t bucket_B_size = alphabet_size<CharT> * alphabet_size<CharT>;
 
 #endif

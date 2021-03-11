@@ -31,9 +31,9 @@
 
 #if (SS_BLOCKSIZE == 0) || (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE)
 
-static inline int32_t ss_ilg(int n) {
+template <typename ResultT> static inline int32_t ss_ilg(ResultT n) {
 #if SS_BLOCKSIZE == 0
-# if defined(BUILD_DIVSUFSORT64)
+	if constexpr (sizeof(ResultT) == 8) {
   return (n >> 32) ?
           ((n >> 48) ?
             ((n >> 56) ?
@@ -49,7 +49,7 @@ static inline int32_t ss_ilg(int n) {
             ((n & 0x0000ff00) ?
                8 + lg_table[(n >>  8) & 0xff] :
                0 + lg_table[(n >>  0) & 0xff]));
-# else
+ } else {
   return (n & 0xffff0000) ?
           ((n & 0xff000000) ?
             24 + lg_table[(n >> 24) & 0xff] :
@@ -57,7 +57,7 @@ static inline int32_t ss_ilg(int n) {
           ((n & 0x0000ff00) ?
              8 + lg_table[(n >>  8) & 0xff] :
              0 + lg_table[(n >>  0) & 0xff]);
-# endif
+ }
 #elif SS_BLOCKSIZE < 256
   return lg_table[n];
 #else
@@ -184,7 +184,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 
 /* Returns the median of three elements. */
 // TODO use reference
-template <typename CharT = unsigned char, typename ResultT = int> static inline int * ss_median3(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3) {
+template <typename CharT = unsigned char, typename ResultT = int> static inline ResultT * ss_median3(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3) {
   ResultT *t;
   if(Td[PA[*v1]] > Td[PA[*v2]]) { std::swap(v1, v2); }
   if(Td[PA[*v2]] > Td[PA[*v3]]) {
@@ -195,7 +195,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static inline 
 }
 
 /* Returns the median of five elements. */
-template <typename CharT = unsigned char, typename ResultT = int> static inline int * ss_median5(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3, ResultT *v4, ResultT *v5) {
+template <typename CharT = unsigned char, typename ResultT = int> static inline ResultT * ss_median5(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3, ResultT *v4, ResultT *v5) {
   ResultT *t;
   if(Td[PA[*v2]] > Td[PA[*v3]]) { std::swap(v2, v3); }
   if(Td[PA[*v4]] > Td[PA[*v5]]) { std::swap(v4, v5); }
@@ -207,7 +207,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static inline 
 }
 
 /* Returns the pivot element. */
-template <typename CharT = unsigned char, typename ResultT = int> static inline int * ss_pivot(const CharT *Td, const ResultT *PA, ResultT *first, ResultT *last) {
+template <typename CharT = unsigned char, typename ResultT = int> static inline ResultT * ss_pivot(const CharT *Td, const ResultT *PA, ResultT *first, ResultT *last) {
   ResultT *middle;
   ResultT t;
 
@@ -233,7 +233,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static inline 
 /*---------------------------------------------------------------------------*/
 
 /* Binary partition for substrings. */
-template <typename ResultT = int> static inline int * ss_partition(const ResultT *PA, int *first, int *last, int depth) {
+template <typename ResultT = int> static inline ResultT * ss_partition(const ResultT *PA, ResultT *first, ResultT *last, ResultT depth) {
   ResultT *a, *b;
   ResultT t;
   for(a = first - 1, b = last;;) {
@@ -249,7 +249,7 @@ template <typename ResultT = int> static inline int * ss_partition(const ResultT
 }
 
 /* Multikey introsort for medium size groups. */
-template <typename CharT = unsigned char, typename ResultT = int> static void ss_mintrosort(const CharT *T, const ResultT *PA, ResultT *first, ResultT *last, int depth) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_mintrosort(const CharT *T, const ResultT *PA, ResultT *first, ResultT *last, ResultT depth) {
   struct stack_type {
     ResultT *a;
     ResultT *b;
@@ -397,7 +397,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 
 #if SS_BLOCKSIZE != 0
 
-template <typename ResultT = int> static inline void ss_blockswap(ResultT *a, ResultT *b, int n) {
+template <typename ResultT = int> static inline void ss_blockswap(ResultT *a, ResultT *b, ResultT n) {
   for(; 0 < n; --n, ++a, ++b) {
 		std::swap(*a, *b);
   }
@@ -408,7 +408,7 @@ template <typename ResultT = int> static inline void ss_rotate(ResultT *first, R
   ResultT l, r;
   l = middle - first, r = last - middle;
   for(; (0 < l) && (0 < r);) {
-    if(l == r) { ss_blockswap(first, middle, l); break; }
+    if(l == r) { ss_blockswap<ResultT>(first, middle, l); break; }
     if(l < r) {
       a = last - 1, b = middle - 1;
       t = *a;
@@ -442,7 +442,7 @@ template <typename ResultT = int> static inline void ss_rotate(ResultT *first, R
 
 /*---------------------------------------------------------------------------*/
 
-template <typename CharT = unsigned char, typename ResultT = int> static void ss_inplacemerge(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, int depth) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_inplacemerge(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT depth) {
   const ResultT *p;
   ResultT *a, *b;
   ResultT len, half;
@@ -481,13 +481,13 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 /*---------------------------------------------------------------------------*/
 
 /* Merge-forward with internal buffer. */
-template <typename CharT = unsigned char, typename ResultT = int> static void ss_mergeforward(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, int depth) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_mergeforward(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, ResultT depth) {
   ResultT *a, *b, *c, *bufend;
   ResultT t;
   int32_t r;
 
   bufend = buf + (middle - first) - 1;
-  ss_blockswap(buf, first, middle - first);
+  ss_blockswap<ResultT>(buf, first, middle - first);
 
   for(t = *(a = first), b = buf, c = middle;;) {
     r = ss_compare(T, PA + *b, PA + *c, depth);
@@ -527,7 +527,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 }
 
 /* Merge-backward with internal buffer. */
-template <typename CharT = unsigned char, typename ResultT = int> static void ss_mergebackward(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, int depth) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_mergebackward(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, ResultT depth) {
   const ResultT *p1, *p2;
   ResultT *a, *b, *c, *bufend;
   ResultT t;
@@ -535,7 +535,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
   int32_t x;
 
   bufend = buf + (last - middle) - 1;
-  ss_blockswap(buf, middle, last - middle);
+  ss_blockswap<ResultT>(buf, middle, last - middle);
 
   x = 0;
   if(*bufend < 0)       { p1 = PA + ~*bufend; x |= 1; }
@@ -582,7 +582,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 }
 
 /* D&C based merge. */
-template <typename CharT = unsigned char, typename ResultT = int> static void ss_swapmerge(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, int bufsize, int depth) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_swapmerge(const CharT *T, const ResultT *PA, ResultT *first, ResultT *middle, ResultT *last, ResultT *buf, ResultT bufsize, ResultT depth) {
   struct stack_type {
     ResultT *a;
     ResultT *b;
@@ -644,7 +644,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 
     if(0 < m) {
       lm = middle - m, rm = middle + m;
-      ss_blockswap(lm, middle, m);
+      ss_blockswap<ResultT>(lm, middle, m);
       l = r = middle, next = 0;
       if(rm < last) {
         if(*rm < 0) {
@@ -684,14 +684,14 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 /*- Function -*/
 
 /* Substring sort */
-template <typename CharT = unsigned char, typename ResultT = int> void sssort(const CharT *T, const ResultT *PA, ResultT *first, ResultT *last, ResultT *buf, int bufsize, int depth, int n, int32_t lastsuffix) {
+template <typename CharT = unsigned char, typename ResultT = int> void sssort(const CharT *T, const ResultT *PA, ResultT *first, ResultT *last, ResultT *buf, ResultT bufsize, ResultT depth, ResultT n, int32_t lastsuffix) {
   
   ResultT *a;
 #if SS_BLOCKSIZE != 0
   ResultT *b, *middle, *curbuf;
-  int j, k, curbufsize, limit;
+  ResultT j, k, curbufsize, limit;
 #endif
-  int i;
+  ResultT i;
 
   if(lastsuffix != 0) {
     ++first;

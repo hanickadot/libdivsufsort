@@ -1,4 +1,4 @@
-#include "sssort.hpp"
+#include "divsufsort.hpp"
 
 int main() {
 	

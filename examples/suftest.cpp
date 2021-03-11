@@ -52,7 +52,6 @@
 #endif
 #include <time.h>
 #include <divsufsort.hpp>
-#include "lfs.hpp"
 
 
 static
@@ -69,11 +68,10 @@ int
 main(int argc, const char *argv[]) {
   FILE *fp;
   const char *fname;
-  sauchar_t *T;
-  saidx_t *SA;
+
   LFS_OFF_T n;
   clock_t start, finish;
-  saint_t needclose = 1;
+  int32_t needclose = 1;
 
   /* Check arguments. */
   if((argc == 1) ||
@@ -125,15 +123,15 @@ main(int argc, const char *argv[]) {
   }
 
   /* Allocate 5n bytes of memory. */
-  T = (sauchar_t *)malloc((size_t)n * sizeof(sauchar_t));
-  SA = (saidx_t *)malloc((size_t)n * sizeof(saidx_t));
+	auto * T = new unsigned char[n];
+	auto * SA = new int[n];
   if((T == NULL) || (SA == NULL)) {
     fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
   /* Read n bytes of data. */
-  if(fread(T, sizeof(sauchar_t), (size_t)n, fp) != (size_t)n) {
+  if(fread(T, sizeof(unsigned char), (size_t)n, fp) != (size_t)n) {
     fprintf(stderr, "%s: %s `%s': ",
       argv[0],
       (ferror(fp) || !feof(fp)) ? "Cannot read from" : "Unexpected EOF in",
@@ -144,9 +142,9 @@ main(int argc, const char *argv[]) {
   if(needclose & 1) { fclose(fp); }
 
   /* Construct the suffix array. */
-  fprintf(stderr, "%s: %" PRIdOFF_T " bytes ... ", fname, n);
+  fprintf(stderr, "%s: %lld bytes ... ", fname, int64_t(n));
   start = clock();
-  if(divsufsort(T, SA, (saidx_t)n) != 0) {
+  if(divsufsort(T, SA, (size_t)n) != 0) {
     fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
     exit(EXIT_FAILURE);
   }
@@ -154,11 +152,11 @@ main(int argc, const char *argv[]) {
   fprintf(stderr, "%.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
 
   /* Check the suffix array. */
-  if(sufcheck(T, SA, (saidx_t)n, 1) != 0) { exit(EXIT_FAILURE); }
+  if(sufcheck(T, SA, (size_t)n, 1) != 0) { exit(EXIT_FAILURE); }
 
   /* Deallocate memory. */
-  free(SA);
-  free(T);
+  delete[] SA;
+  delete[] T;
 
   return 0;
 }

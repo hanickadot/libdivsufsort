@@ -25,13 +25,12 @@
  */
 
 #include "common.hpp"
-#include "lg_table.hpp"
 
 /*- Private Functions -*/
 
-static inline saint_t tr_ilg(saidx_t n) {
-#if defined(BUILD_DIVSUFSORT64)
-  return (n >> 32) ?
+template <typename ResultT> static inline int32_t tr_ilg(ResultT n) {
+  if constexpr (sizeof(ResultT) == 8) {
+    return (n >> 32) ?
           ((n >> 48) ?
             ((n >> 56) ?
               56 + lg_table[(n >> 56) & 0xff] :
@@ -46,24 +45,25 @@ static inline saint_t tr_ilg(saidx_t n) {
             ((n & 0x0000ff00) ?
                8 + lg_table[(n >>  8) & 0xff] :
                0 + lg_table[(n >>  0) & 0xff]));
-#else
-  return (n & 0xffff0000) ?
-          ((n & 0xff000000) ?
-            24 + lg_table[(n >> 24) & 0xff] :
-            16 + lg_table[(n >> 16) & 0xff]) :
-          ((n & 0x0000ff00) ?
-             8 + lg_table[(n >>  8) & 0xff] :
-             0 + lg_table[(n >>  0) & 0xff]);
-#endif
+  } else {
+  	static_assert(sizeof(ResultT) == 4);
+    return (n & 0xffff0000) ?
+            ((n & 0xff000000) ?
+              24 + lg_table[(n >> 24) & 0xff] :
+              16 + lg_table[(n >> 16) & 0xff]) :
+            ((n & 0x0000ff00) ?
+               8 + lg_table[(n >>  8) & 0xff] :
+               0 + lg_table[(n >>  0) & 0xff]);
+  }
 }
 
 
 /*---------------------------------------------------------------------------*/
 
 /* Simple insertionsort for small size groups. */
-static void tr_insertionsort(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
-  saidx_t *a, *b;
-  saidx_t t, r;
+template <typename ResultT> static void tr_insertionsort(const ResultT *ISAd, ResultT *first, ResultT *last) {
+  ResultT *a, *b;
+  ResultT t, r;
 
   for(a = first + 1; a < last; ++a) {
     for(t = *a, b = a - 1; 0 > (r = ISAd[t] - ISAd[*b]);) {
@@ -78,10 +78,10 @@ static void tr_insertionsort(const saidx_t *ISAd, saidx_t *first, saidx_t *last)
 
 /*---------------------------------------------------------------------------*/
 
-static inline void tr_fixdown(const saidx_t *ISAd, saidx_t *SA, saidx_t i, saidx_t size) {
-  saidx_t j, k;
-  saidx_t v;
-  saidx_t c, d, e;
+template <typename ResultT> static inline void tr_fixdown(const ResultT *ISAd, ResultT *SA, ResultT i, ResultT size) {
+  ResultT j, k;
+  ResultT v;
+  ResultT c, d, e;
 
   for(v = SA[i], c = ISAd[v]; (j = 2 * i + 1) < size; SA[i] = SA[k], i = k) {
     d = ISAd[SA[k = j++]];
@@ -92,9 +92,9 @@ static inline void tr_fixdown(const saidx_t *ISAd, saidx_t *SA, saidx_t i, saidx
 }
 
 /* Simple top-down heapsort. */
-static void tr_heapsort(const saidx_t *ISAd, saidx_t *SA, saidx_t size) {
-  saidx_t i, m;
-  saidx_t t;
+template <typename ResultT> static void tr_heapsort(const ResultT *ISAd, ResultT *SA, ResultT size) {
+  ResultT i, m;
+  ResultT t;
 
   m = size;
   if((size % 2) == 0) {
@@ -102,11 +102,11 @@ static void tr_heapsort(const saidx_t *ISAd, saidx_t *SA, saidx_t size) {
     if(ISAd[SA[m / 2]] < ISAd[SA[m]]) { std::swap(SA[m], SA[m / 2]); }
   }
 
-  for(i = m / 2 - 1; 0 <= i; --i) { tr_fixdown(ISAd, SA, i, m); }
-  if((size % 2) == 0) { std::swap(SA[0], SA[m]); tr_fixdown(ISAd, SA, 0, m); }
+  for(i = m / 2 - 1; 0 <= i; --i) { tr_fixdown<ResultT>(ISAd, SA, i, m); }
+  if((size % 2) == 0) { std::swap(SA[0], SA[m]); tr_fixdown<ResultT>(ISAd, SA, 0, m); }
   for(i = m - 1; 0 < i; --i) {
     t = SA[0], SA[0] = SA[i];
-    tr_fixdown(ISAd, SA, 0, i);
+    tr_fixdown<ResultT>(ISAd, SA, 0, i);
     SA[i] = t;
   }
 }
@@ -115,8 +115,8 @@ static void tr_heapsort(const saidx_t *ISAd, saidx_t *SA, saidx_t size) {
 /*---------------------------------------------------------------------------*/
 
 /* Returns the median of three elements. */
-static inline saidx_t * tr_median3(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2, saidx_t *v3) {
-  saidx_t *t;
+template <typename ResultT> static inline ResultT * tr_median3(const ResultT *ISAd, ResultT *v1, ResultT *v2, ResultT *v3) {
+  ResultT *t;
   if(ISAd[*v1] > ISAd[*v2]) { std::swap(v1, v2); }
   if(ISAd[*v2] > ISAd[*v3]) {
     if(ISAd[*v1] > ISAd[*v3]) { return v1; }
@@ -126,8 +126,8 @@ static inline saidx_t * tr_median3(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2
 }
 
 /* Returns the median of five elements. */
-static inline saidx_t * tr_median5(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2, saidx_t *v3, saidx_t *v4, saidx_t *v5) {
-  saidx_t *t;
+template <typename ResultT> static inline ResultT * tr_median5(const ResultT *ISAd, ResultT *v1, ResultT *v2, ResultT *v3, ResultT *v4, ResultT *v5) {
+  ResultT *t;
   if(ISAd[*v2] > ISAd[*v3]) { std::swap(v2, v3); }
   if(ISAd[*v4] > ISAd[*v5]) { std::swap(v4, v5); }
   if(ISAd[*v2] > ISAd[*v4]) { std::swap(v2, v4); std::swap(v3, v5); }
@@ -138,9 +138,9 @@ static inline saidx_t * tr_median5(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2
 }
 
 /* Returns the pivot element. */
-static inline saidx_t * tr_pivot(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
-  saidx_t *middle;
-  saidx_t t;
+template <typename ResultT> static inline ResultT * tr_pivot(const ResultT *ISAd, ResultT *first, ResultT *last) {
+  ResultT *middle;
+  ResultT t;
 
   t = last - first;
   middle = first + t / 2;
@@ -164,18 +164,18 @@ static inline saidx_t * tr_pivot(const saidx_t *ISAd, saidx_t *first, saidx_t *l
 /*---------------------------------------------------------------------------*/
 
 struct trbudget_t {
-  saidx_t chance;
-  saidx_t remain;
-  saidx_t incval;
-  saidx_t count;
+  int chance;
+  int remain;
+  int incval;
+  int count;
 };
 
-static inline void trbudget_init(trbudget_t *budget, saidx_t chance, saidx_t incval) {
+static inline void trbudget_init(trbudget_t *budget, int chance, int incval) {
   budget->chance = chance;
   budget->remain = budget->incval = incval;
 }
 
-static inline saint_t trbudget_check(trbudget_t *budget, saidx_t size) {
+static inline int32_t trbudget_check(trbudget_t *budget, int size) {
   if(size <= budget->remain) { budget->remain -= size; return 1; }
   if(budget->chance == 0) { budget->count += size; return 0; }
   budget->remain += budget->incval - size;
@@ -186,12 +186,10 @@ static inline saint_t trbudget_check(trbudget_t *budget, saidx_t size) {
 
 /*---------------------------------------------------------------------------*/
 
-static inline void tr_partition(const saidx_t *ISAd,
-             saidx_t *first, saidx_t *middle, saidx_t *last,
-             saidx_t **pa, saidx_t **pb, saidx_t v) {
-  saidx_t *a, *b, *c, *d, *e, *f;
-  saidx_t t, s;
-  saidx_t x = 0;
+template <typename ResultT> static inline void tr_partition(const ResultT *ISAd, ResultT *first, ResultT *middle, ResultT *last, ResultT **pa, ResultT **pb, ResultT v) {
+  ResultT *a, *b, *c, *d, *e, *f;
+  ResultT t, s;
+  ResultT x = 0;
 
   for(b = middle - 1; (++b < last) && ((x = ISAd[*b]) == v);) { }
   if(((a = b) < last) && (x < v)) {
@@ -226,11 +224,11 @@ static inline void tr_partition(const saidx_t *ISAd,
   *pa = first, *pb = last;
 }
 
-static void tr_copy(saidx_t *ISA, const saidx_t *SA, saidx_t *first, saidx_t *a, saidx_t *b, saidx_t *last, saidx_t depth) {
+template <typename ResultT> static void tr_copy(ResultT *ISA, const ResultT *SA, ResultT *first, ResultT *a, ResultT *b, ResultT *last, ResultT depth) {
   /* sort suffixes of middle partition
      by using sorted order of suffixes of left and right partition. */
-  saidx_t *c, *d, *e;
-  saidx_t s, v;
+  ResultT *c, *d, *e;
+  ResultT s, v;
 
   v = b - SA - 1;
   for(c = first, d = a - 1; c <= d; ++c) {
@@ -247,10 +245,10 @@ static void tr_copy(saidx_t *ISA, const saidx_t *SA, saidx_t *first, saidx_t *a,
   }
 }
 
-static void tr_partialcopy(saidx_t *ISA, const saidx_t *SA, saidx_t *first, saidx_t *a, saidx_t *b, saidx_t *last, saidx_t depth) {
-  saidx_t *c, *d, *e;
-  saidx_t s, v;
-  saidx_t rank, lastrank, newrank = -1;
+template <typename ResultT> static void tr_partialcopy(ResultT *ISA, const ResultT *SA, ResultT *first, ResultT *a, ResultT *b, ResultT *last, ResultT depth) {
+  ResultT *c, *d, *e;
+  ResultT s, v;
+  ResultT rank, lastrank, newrank = -1;
 
   v = b - SA - 1;
   lastrank = -1;
@@ -281,32 +279,32 @@ static void tr_partialcopy(saidx_t *ISA, const saidx_t *SA, saidx_t *first, said
   }
 }
 
-static void tr_introsort(saidx_t *ISA, const saidx_t *ISAd, saidx_t *SA, saidx_t *first, saidx_t *last, trbudget_t *budget) {
+template <typename ResultT> static void tr_introsort(ResultT *ISA, const ResultT *ISAd, ResultT *SA, ResultT *first, ResultT *last, trbudget_t *budget) {
   struct stack_type {
-    const saidx_t *a;
-    saidx_t *b;
-    saidx_t *c;
-    saint_t d;
-    saint_t e;
+    const ResultT *a;
+    ResultT *b;
+    ResultT *c;
+    int32_t d;
+    int32_t e;
     constexpr operator auto() noexcept {
       return std::tie(a,b,c,d,e);
     }
   };
   static_stack<stack_type, TR_STACKSIZE> stack;
   
-  saidx_t *a, *b, *c;
-  saidx_t t;
-  saidx_t v, x = 0;
-  saidx_t incr = ISAd - ISA;
-  saint_t limit, next;
-  saint_t trlink = -1;
+  ResultT *a, *b, *c;
+  ResultT t;
+  ResultT v, x = 0;
+  ResultT incr = ISAd - ISA;
+  int32_t limit, next;
+  int32_t trlink = -1;
 
-  for(limit = tr_ilg(last - first);;) {
+  for(limit = tr_ilg<ResultT>(last - first);;) {
 
     if(limit < 0) {
       if(limit == -1) {
         /* tandem repeat partition */
-        tr_partition(ISAd - incr, first, first, last, &a, &b, last - SA - 1);
+        tr_partition<ResultT>(ISAd - incr, first, first, last, &a, &b, last - SA - 1);
 
         /* update ranks */
         if(a < last) {
@@ -348,10 +346,10 @@ static void tr_introsort(saidx_t *ISA, const saidx_t *ISAd, saidx_t *SA, saidx_t
         a = stack.top().b;
         b = stack.top().c;
         if(stack.top().d == 0) {
-          tr_copy(ISA, SA, first, a, b, last, ISAd - ISA);
+          tr_copy<ResultT>(ISA, SA, first, a, b, last, ISAd - ISA);
         } else {
           if(0 <= trlink) { stack[trlink].d = -1; }
-          tr_partialcopy(ISA, SA, first, a, b, last, ISAd - ISA);
+          tr_partialcopy<ResultT>(ISA, SA, first, a, b, last, ISAd - ISA);
         }
         stack.pop();
         if (stack.size() == 0) return;
@@ -399,13 +397,13 @@ static void tr_introsort(saidx_t *ISA, const saidx_t *ISAd, saidx_t *SA, saidx_t
     }
 
     if((last - first) <= TR_INSERTIONSORT_THRESHOLD) {
-      tr_insertionsort(ISAd, first, last);
+      tr_insertionsort<ResultT>(ISAd, first, last);
       limit = -3;
       continue;
     }
 
     if(limit-- == 0) {
-      tr_heapsort(ISAd, first, last - first);
+      tr_heapsort<ResultT>(ISAd, first, last - first);
       for(a = last - 1; first < a; a = b) {
         for(x = ISAd[*a], b = a - 1; (first <= b) && (ISAd[*b] == x); --b) { *b = ~*b; }
       }
@@ -414,14 +412,14 @@ static void tr_introsort(saidx_t *ISA, const saidx_t *ISAd, saidx_t *SA, saidx_t
     }
 
     /* choose pivot */
-    a = tr_pivot(ISAd, first, last);
+    a = tr_pivot<ResultT>(ISAd, first, last);
     std::swap(*first, *a);
     v = ISAd[*first];
 
     /* partition */
-    tr_partition(ISAd, first, first + 1, last, &a, &b, v);
+    tr_partition<ResultT>(ISAd, first, first + 1, last, &a, &b, v);
     if((last - first) != (b - a)) {
-      next = (ISA[*a] != v) ? tr_ilg(b - a) : -1;
+      next = (ISA[*a] != v) ? tr_ilg<ResultT>(b - a) : -1;
 
       /* update ranks */
       for(c = first, v = a - SA - 1; c < a; ++c) { ISA[*c] = v; }
@@ -508,7 +506,7 @@ static void tr_introsort(saidx_t *ISA, const saidx_t *ISAd, saidx_t *SA, saidx_t
       }
     } else {
       if(trbudget_check(budget, last - first)) {
-        limit = tr_ilg(last - first), ISAd += incr;
+        limit = tr_ilg<ResultT>(last - first), ISAd += incr;
       } else {
         if(0 <= trlink) { stack[trlink].d = -1; }
         if (stack.size() == 0) return;
@@ -526,11 +524,11 @@ static void tr_introsort(saidx_t *ISA, const saidx_t *ISAd, saidx_t *SA, saidx_t
 /*- Function -*/
 
 /* Tandem repeat sort */
-void trsort(saidx_t *ISA, saidx_t *SA, saidx_t n, saidx_t depth) {
-  saidx_t *ISAd;
-  saidx_t *first, *last;
+template <typename ResultT> void trsort(ResultT *ISA, ResultT *SA, ResultT n, ResultT depth) {
+  ResultT *ISAd;
+  ResultT *first, *last;
   trbudget_t budget;
-  saidx_t t, skip, unsorted;
+  ResultT t, skip, unsorted;
 
   trbudget_init(&budget, tr_ilg(n) * 2 / 3, n);
 /*  trbudget_init(&budget, tr_ilg(n) * 3 / 4, n); */
