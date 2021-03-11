@@ -40,7 +40,7 @@
 #define BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * alphabet_size<CharT> + (_c1)])
 
 /* Sorts suffixes of type B*. */
-template <typename CharT = unsigned char, typename ResultT = uint32_t> static ResultT sort_typeBstar(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> static ResultT sort_typeBstar(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n) {
   ResultT *PAb, *ISAb, *buf;
 #ifdef _OPENMP
   ResultT *curbuf;
@@ -189,7 +189,7 @@ template <typename CharT = unsigned char, typename ResultT = uint32_t> static Re
 }
 
 /* Constructs the suffix array by using the sorted order of type B* suffixes. */
-template <typename CharT = unsigned char, typename ResultT = uint32_t> static void construct_SA(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> static void construct_SA(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
   ResultT *i, *j, *k;
   ResultT s;
   int32_t c0, c1, c2;
@@ -250,7 +250,7 @@ template <typename CharT = unsigned char, typename ResultT = uint32_t> static vo
 
 /* Constructs the burrows-wheeler transformed string directly
    by using the sorted order of type B* suffixes. */
-template <typename CharT = unsigned char, typename ResultT = uint32_t> static ResultT construct_BWT(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> static ResultT construct_BWT(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
   ResultT *i, *j, *k, *orig;
   ResultT s;
   int32_t c0, c1, c2;
@@ -318,7 +318,7 @@ template <typename CharT = unsigned char, typename ResultT = uint32_t> static Re
 
 /*- Function -*/
 
-template <typename CharT = unsigned char, typename ResultT = uint32_t> void divsufsort(const CharT *T, ResultT *SA, no_deduce<ResultT> n) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> void divsufsort(const CharT *T, ResultT *SA, no_deduce<ResultT> n) {
   /* Check arguments. */
 	assert(T != nullptr);
 	assert(SA != nullptr);
@@ -335,7 +335,7 @@ template <typename CharT = unsigned char, typename ResultT = uint32_t> void divs
   construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
 }
 
-template <typename ResultT = uint32_t, typename CharT = unsigned char> auto divsufsort(std::span<const CharT> T) -> std::vector<ResultT> {
+template <typename ResultT = int32_t, typename CharT = unsigned char> auto divsufsort(std::span<const CharT> T) -> std::vector<ResultT> {
 	auto result = std::vector<ResultT>(T.size());
 	
 	divsufsort(T.data(), result.data(), T.size());
@@ -343,7 +343,7 @@ template <typename ResultT = uint32_t, typename CharT = unsigned char> auto divs
 	return result;
 }
 
-template <typename CharT = unsigned char, typename ResultT = uint32_t> ResultT divbwt(const CharT *T, CharT *U, ResultT *A, no_deduce<ResultT> n) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> ResultT divbwt(const CharT *T, CharT *U, ResultT *A, no_deduce<ResultT> n) {
   ResultT *B;
 
   /* Check arguments. */
