@@ -79,11 +79,11 @@ note:
 */
 
   /* Calculate the index of start/end point of each bucket. */
-  for(c0 = 0, i = 0, j = 0; c0 < alphabet_size<CharT>; ++c0) {
+  for(c0 = 0, i = 0, j = 0; c0 < static_cast<int32_t>(alphabet_size<CharT>); ++c0) {
     t = i + BUCKET_A(c0);
     BUCKET_A(c0) = i + j; /* start point */
     i = t + BUCKET_B(c0, c0);
-    for(c1 = c0 + 1; c1 < alphabet_size<CharT>; ++c1) {
+    for(c1 = c0 + 1; c1 < static_cast<int32_t>(alphabet_size<CharT>); ++c1) {
       j += BUCKET_BSTAR(c0, c1);
       BUCKET_BSTAR(c0, c1) = j; /* end point */
       i += BUCKET_B(c0, c1);
