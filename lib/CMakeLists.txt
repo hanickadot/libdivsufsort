@@ -14,6 +14,7 @@ set_target_properties(divsufsort PROPERTIES
   SOVERSION "${LIBRARY_SOVERSION}"
   DEFINE_SYMBOL DIVSUFSORT_BUILD_DLL
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../examples")
+target_compile_features(divsufsort PUBLIC cxx_std_20)
 
 ## libdivsufsort64 ##
 if(BUILD_DIVSUFSORT64)

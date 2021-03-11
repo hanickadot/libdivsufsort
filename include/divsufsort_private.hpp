@@ -97,10 +97,10 @@ static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 #if defined(SS_INSERTIONSORT_THRESHOLD)
 # if SS_INSERTIONSORT_THRESHOLD < 1
 #  undef SS_INSERTIONSORT_THRESHOLD
-#  define SS_INSERTIONSORT_THRESHOLD (1)
+static constexpr std::size_t SS_INSERTIONSORT_THRESHOLD = 1;
 # endif
 #else
-# define SS_INSERTIONSORT_THRESHOLD (8)
+static constexpr std::size_t SS_INSERTIONSORT_THRESHOLD = 8;
 #endif
 #if defined(SS_BLOCKSIZE)
 # if SS_BLOCKSIZE < 0
@@ -116,33 +116,50 @@ static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 /* minstacksize = log(SS_BLOCKSIZE) / log(3) * 2 */
 #if SS_BLOCKSIZE == 0
 # if defined(BUILD_DIVSUFSORT64)
-#  define SS_MISORT_STACKSIZE (96)
+static constexpr std::size_t SS_MISORT_STACKSIZE = 96;
 # else
-#  define SS_MISORT_STACKSIZE (64)
+static constexpr std::size_t SS_MISORT_STACKSIZE = 64;
 # endif
 #elif SS_BLOCKSIZE <= 4096
-# define SS_MISORT_STACKSIZE (16)
+static constexpr std::size_t SS_MISORT_STACKSIZE = 16;
 #else
-# define SS_MISORT_STACKSIZE (24)
+static constexpr std::size_t SS_MISORT_STACKSIZE = 24;
 #endif
+
 #if defined(BUILD_DIVSUFSORT64)
-# define SS_SMERGE_STACKSIZE (64)
+static constexpr std::size_t SS_SMERGE_STACKSIZE = 64;
 #else
-# define SS_SMERGE_STACKSIZE (32)
+static constexpr std::size_t SS_SMERGE_STACKSIZE = 32;
 #endif
+
 /* for trsort.c */
-#define TR_INSERTIONSORT_THRESHOLD (8)
+static constexpr std::size_t TR_INSERTIONSORT_THRESHOLD = 8;
+
 #if defined(BUILD_DIVSUFSORT64)
-# define TR_STACKSIZE (96)
+static constexpr std::size_t TR_STACKSIZE = 96;
 #else
-# define TR_STACKSIZE (64)
+static constexpr std::size_t TR_STACKSIZE = 64;
+#endif
+
+static_assert(SS_INSERTIONSORT_THRESHOLD == 8);
+static_assert(SS_BLOCKSIZE == 1024);
+static_assert(SS_MISORT_STACKSIZE == 16);
+#if defined(BUILD_DIVSUFSORT64)
+static_assert(SS_SMERGE_STACKSIZE == 64);
+#else
+static_assert(SS_SMERGE_STACKSIZE == 32);
+#endif
+static_assert(TR_INSERTIONSORT_THRESHOLD == 8);
+#if defined(BUILD_DIVSUFSORT64)
+static_assert(TR_STACKSIZE == 96);
+#else
+static_assert(TR_STACKSIZE == 64);
 #endif
 
 
 /*- Macros -*/
 #ifndef SWAP
-#define SWAP(_a, _b) std::swap((_a), (_b))
-	//# define SWAP(_a, _b) do { t = (_a); (_a) = (_b); (_b) = t; } while(0)
+# define SWAP(_a, _b) do { t = (_a); (_a) = (_b); (_b) = t; } while(0)
 #endif /* SWAP */
 #ifndef MIN
 # define MIN(_a, _b) std::min((_a), (_b))
