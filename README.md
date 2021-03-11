@@ -83,7 +83,7 @@ divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n);
 #include <stdlib.h>
 #include <string.h>
 
-#include <divsufsort.h>
+#include <divsufsort.hpp>
 
 int main() {
     // intput data

@@ -25,7 +25,7 @@
  */
 
 #if HAVE_CONFIG_H
-# include "config.h"
+# include "config.hpp"
 #endif
 #include <stdio.h>
 #if HAVE_STRING_H
@@ -50,8 +50,8 @@
 # include <io.h>
 # include <fcntl.h>
 #endif
-#include <divsufsort.h>
-#include "lfs.h"
+#include <divsufsort.hpp>
+#include "lfs.hpp"
 
 
 static

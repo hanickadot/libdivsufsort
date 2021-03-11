@@ -6,6 +6,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include"
                     "${CMAKE_CURRENT_BINARY_DIR}/../include")
 link_directories("${CMAKE_CURRENT_BINARY_DIR}/../lib")
 foreach(src suftest mksary sasearch bwt unbwt)
-  add_executable(${src} ${src}.c)
+  add_executable(${src} ${src}.cpp)
   target_link_libraries(${src} divsufsort)
 endforeach(src)

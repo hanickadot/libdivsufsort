@@ -1,5 +1,5 @@
 /*
- * unbwt.c for libdivsufsort
+ * bwt.c for libdivsufsort
  * Copyright (c) 2003-2008 Yuta Mori All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -25,7 +25,7 @@
  */
 
 #if HAVE_CONFIG_H
-# include "config.h"
+# include "config.hpp"
 #endif
 #include <stdio.h>
 #if HAVE_STRING_H
@@ -51,29 +51,27 @@
 # include <fcntl.h>
 #endif
 #include <time.h>
-#include <divsufsort.h>
-#include "lfs.h"
+#include <divsufsort.hpp>
+#include "lfs.hpp"
 
 
 static
 size_t
-read_int(FILE *fp, saidx_t *n) {
+write_int(FILE *fp, saidx_t n) {
   unsigned char c[4];
-  size_t m = fread(c, sizeof(unsigned char), 4, fp);
-  if(m == 4) {
-    *n = (c[0] <<  0) | (c[1] <<  8) |
-         (c[2] << 16) | (c[3] << 24);
-  }
-  return m;
+  c[0] = (unsigned char)((n >>  0) & 0xff), c[1] = (unsigned char)((n >>  8) & 0xff),
+  c[2] = (unsigned char)((n >> 16) & 0xff), c[3] = (unsigned char)((n >> 24) & 0xff);
+  return fwrite(c, sizeof(unsigned char), 4, fp);
 }
 
 static
 void
 print_help(const char *progname, int status) {
   fprintf(stderr,
-          "unbwt, an inverse burrows-wheeler transform program, version %s.\n",
+          "bwt, a burrows-wheeler transform program, version %s.\n",
           divsufsort_version());
-  fprintf(stderr, "usage: %s INFILE OUTFILE\n\n", progname);
+  fprintf(stderr, "usage: %s [-b num] INFILE OUTFILE\n", progname);
+  fprintf(stderr, "  -b num    set block size to num MiB [1..512] (default: 32)\n\n");
   exit(status);
 }
 
@@ -82,25 +80,34 @@ main(int argc, const char *argv[]) {
   FILE *fp, *ofp;
   const char *fname, *ofname;
   sauchar_t *T;
-  saidx_t *A;
+  saidx_t *SA;
   LFS_OFF_T n;
   size_t m;
   saidx_t pidx;
-  clock_t start, finish;
-  saint_t err, blocksize, needclose = 3;
+  clock_t start,finish;
+  saint_t i, blocksize = 32, needclose = 3;
 
   /* Check arguments. */
   if((argc == 1) ||
      (strcmp(argv[1], "-h") == 0) ||
      (strcmp(argv[1], "--help") == 0)) { print_help(argv[0], EXIT_SUCCESS); }
-  if(argc != 3) { print_help(argv[0], EXIT_FAILURE); }
+  if((argc != 3) && (argc != 5)) { print_help(argv[0], EXIT_FAILURE); }
+  i = 1;
+  if(argc == 5) {
+    if(strcmp(argv[i], "-b") != 0) { print_help(argv[0], EXIT_FAILURE); }
+    blocksize = atoi(argv[i + 1]);
+    if(blocksize < 0) { blocksize = 1; }
+    else if(512 < blocksize) { blocksize = 512; }
+    i += 2;
+  }
+  blocksize <<= 20;
 
   /* Open a file for reading. */
-  if(strcmp(argv[1], "-") != 0) {
+  if(strcmp(argv[i], "-") != 0) {
 #if HAVE_FOPEN_S
-    if(fopen_s(&fp, fname = argv[1], "rb") != 0) {
+    if(fopen_s(&fp, fname = argv[i], "rb") != 0) {
 #else
-    if((fp = LFS_FOPEN(fname = argv[1], "rb")) == NULL) {
+    if((fp = LFS_FOPEN(fname = argv[i], "rb")) == NULL) {
 #endif
       fprintf(stderr, "%s: Cannot open file `%s': ", argv[0], fname);
       perror(NULL);
@@ -118,13 +125,14 @@ main(int argc, const char *argv[]) {
     fname = "stdin";
     needclose ^= 1;
   }
+  i += 1;
 
   /* Open a file for writing. */
-  if(strcmp(argv[2], "-") != 0) {
+  if(strcmp(argv[i], "-") != 0) {
 #if HAVE_FOPEN_S
-    if(fopen_s(&ofp, ofname = argv[2], "wb") != 0) {
+    if(fopen_s(&ofp, ofname = argv[i], "wb") != 0) {
 #else
-    if((ofp = LFS_FOPEN(ofname = argv[2], "wb")) == NULL) {
+    if((ofp = LFS_FOPEN(ofname = argv[i], "wb")) == NULL) {
 #endif
       fprintf(stderr, "%s: Cannot open file `%s': ", argv[0], ofname);
       perror(NULL);
@@ -143,44 +151,49 @@ main(int argc, const char *argv[]) {
     needclose ^= 2;
   }
 
-  /* Read the blocksize. */
-  if(read_int(fp, &blocksize) != 4) {
-    fprintf(stderr, "%s: Cannot read from `%s': ", argv[0], fname);
-    perror(NULL);
-    exit(EXIT_FAILURE);
-  }
+  /* Get the file size. */
+  if(LFS_FSEEK(fp, 0, SEEK_END) == 0) {
+    n = LFS_FTELL(fp);
+    rewind(fp);
+    if(n < 0) {
+      fprintf(stderr, "%s: Cannot ftell `%s': ", argv[0], fname);
+      perror(NULL);
+      exit(EXIT_FAILURE);
+    }
+    if(0x20000000L < n) { n = 0x20000000L; }
+    if((blocksize == 0) || (n < blocksize)) { blocksize = (saidx_t)n; }
+  } else if(blocksize == 0) { blocksize = 32 << 20; }
 
   /* Allocate 5blocksize bytes of memory. */
   T = (sauchar_t *)malloc(blocksize * sizeof(sauchar_t));
-  A = (saidx_t *)malloc(blocksize * sizeof(saidx_t));
-  if((T == NULL) || (A == NULL)) {
+  SA = (saidx_t *)malloc(blocksize * sizeof(saidx_t));
+  if((T == NULL) || (SA == NULL)) {
     fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  fprintf(stderr, "UnBWT (blocksize %" PRIdSAINT_T ") ... ", blocksize);
+  /* Write the blocksize. */
+  if(write_int(ofp, blocksize) != 4) {
+    fprintf(stderr, "%s: Cannot write to `%s': ", argv[0], ofname);
+    perror(NULL);
+    exit(EXIT_FAILURE);
+  }
+
+  fprintf(stderr, "  BWT (blocksize %" PRIdSAINT_T ") ... ", blocksize);
   start = clock();
-  for(n = 0; (m = read_int(fp, &pidx)) != 0; n += m) {
-    /* Read blocksize bytes of data. */
-    if((m != 4) || ((m = fread(T, sizeof(sauchar_t), blocksize, fp)) == 0)) {
-      fprintf(stderr, "%s: %s `%s': ",
+  for(n = 0; 0 < (m = fread(T, sizeof(sauchar_t), blocksize, fp)); n += m) {
+    /* Burrows-Wheeler Transform. */
+    pidx = divbwt(T, T, SA, m);
+    if(pidx < 0) {
+      fprintf(stderr, "%s (bw_transform): %s.\n",
         argv[0],
-        (ferror(fp) || !feof(fp)) ? "Cannot read from" : "Unexpected EOF in",
-        fname);
-      perror(NULL);
+        (pidx == -1) ? "Invalid arguments" : "Cannot allocate memory");
       exit(EXIT_FAILURE);
     }
 
-    /* Inverse Burrows-Wheeler Transform. */
-    if((err = inverse_bw_transform(T, T, A, m, pidx)) != 0) {
-      fprintf(stderr, "%s (reverseBWT): %s.\n",
-        argv[0],
-        (err == -1) ? "Invalid data" : "Cannot allocate memory");
-      exit(EXIT_FAILURE);
-    }
-
-    /* Write m bytes of data. */
-    if(fwrite(T, sizeof(sauchar_t), m, ofp) != m) {
+    /* Write the bwted data. */
+    if((write_int(ofp, pidx) != 4) ||
+       (fwrite(T, sizeof(sauchar_t), m, ofp) != m)) {
       fprintf(stderr, "%s: Cannot write to `%s': ", argv[0], ofname);
       perror(NULL);
       exit(EXIT_FAILURE);
@@ -200,7 +213,7 @@ main(int argc, const char *argv[]) {
   if(needclose & 2) { fclose(ofp); }
 
   /* Deallocate memory. */
-  free(A);
+  free(SA);
   free(T);
 
   return 0;

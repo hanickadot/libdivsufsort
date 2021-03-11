@@ -1,5 +1,5 @@
 /*
- * mksary.c for libdivsufsort
+ * unbwt.c for libdivsufsort
  * Copyright (c) 2003-2008 Yuta Mori All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -25,7 +25,7 @@
  */
 
 #if HAVE_CONFIG_H
-# include "config.h"
+# include "config.hpp"
 #endif
 #include <stdio.h>
 #if HAVE_STRING_H
@@ -51,15 +51,27 @@
 # include <fcntl.h>
 #endif
 #include <time.h>
-#include <divsufsort.h>
-#include "lfs.h"
+#include <divsufsort.hpp>
+#include "lfs.hpp"
 
+
+static
+size_t
+read_int(FILE *fp, saidx_t *n) {
+  unsigned char c[4];
+  size_t m = fread(c, sizeof(unsigned char), 4, fp);
+  if(m == 4) {
+    *n = (c[0] <<  0) | (c[1] <<  8) |
+         (c[2] << 16) | (c[3] << 24);
+  }
+  return m;
+}
 
 static
 void
 print_help(const char *progname, int status) {
   fprintf(stderr,
-          "mksary, a simple suffix array builder, version %s.\n",
+          "unbwt, an inverse burrows-wheeler transform program, version %s.\n",
           divsufsort_version());
   fprintf(stderr, "usage: %s INFILE OUTFILE\n\n", progname);
   exit(status);
@@ -70,10 +82,12 @@ main(int argc, const char *argv[]) {
   FILE *fp, *ofp;
   const char *fname, *ofname;
   sauchar_t *T;
-  saidx_t *SA;
+  saidx_t *A;
   LFS_OFF_T n;
+  size_t m;
+  saidx_t pidx;
   clock_t start, finish;
-  saint_t needclose = 3;
+  saint_t err, blocksize, needclose = 3;
 
   /* Check arguments. */
   if((argc == 1) ||
@@ -129,64 +143,64 @@ main(int argc, const char *argv[]) {
     needclose ^= 2;
   }
 
-  /* Get the file size. */
-  if(LFS_FSEEK(fp, 0, SEEK_END) == 0) {
-    n = LFS_FTELL(fp);
-    rewind(fp);
-    if(n < 0) {
-      fprintf(stderr, "%s: Cannot ftell `%s': ", argv[0], fname);
-      perror(NULL);
-      exit(EXIT_FAILURE);
-    }
-    if(0x7fffffff <= n) {
-      fprintf(stderr, "%s: Input file `%s' is too big.\n", argv[0], fname);
-      exit(EXIT_FAILURE);
-    }
-  } else {
-    fprintf(stderr, "%s: Cannot fseek `%s': ", argv[0], fname);
+  /* Read the blocksize. */
+  if(read_int(fp, &blocksize) != 4) {
+    fprintf(stderr, "%s: Cannot read from `%s': ", argv[0], fname);
     perror(NULL);
     exit(EXIT_FAILURE);
   }
 
   /* Allocate 5blocksize bytes of memory. */
-  T = (sauchar_t *)malloc((size_t)n * sizeof(sauchar_t));
-  SA = (saidx_t *)malloc((size_t)n * sizeof(saidx_t));
-  if((T == NULL) || (SA == NULL)) {
+  T = (sauchar_t *)malloc(blocksize * sizeof(sauchar_t));
+  A = (saidx_t *)malloc(blocksize * sizeof(saidx_t));
+  if((T == NULL) || (A == NULL)) {
     fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  /* Read n bytes of data. */
-  if(fread(T, sizeof(sauchar_t), (size_t)n, fp) != (size_t)n) {
-    fprintf(stderr, "%s: %s `%s': ",
-      argv[0],
-      (ferror(fp) || !feof(fp)) ? "Cannot read from" : "Unexpected EOF in",
-      fname);
-    perror(NULL);
-    exit(EXIT_FAILURE);
-  }
-  if(needclose & 1) { fclose(fp); }
-
-  /* Construct the suffix array. */
-  fprintf(stderr, "%s: %" PRIdOFF_T " bytes ... ", fname, n);
+  fprintf(stderr, "UnBWT (blocksize %" PRIdSAINT_T ") ... ", blocksize);
   start = clock();
-  if(divsufsort(T, SA, (saidx_t)n) != 0) {
-    fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
+  for(n = 0; (m = read_int(fp, &pidx)) != 0; n += m) {
+    /* Read blocksize bytes of data. */
+    if((m != 4) || ((m = fread(T, sizeof(sauchar_t), blocksize, fp)) == 0)) {
+      fprintf(stderr, "%s: %s `%s': ",
+        argv[0],
+        (ferror(fp) || !feof(fp)) ? "Cannot read from" : "Unexpected EOF in",
+        fname);
+      perror(NULL);
+      exit(EXIT_FAILURE);
+    }
+
+    /* Inverse Burrows-Wheeler Transform. */
+    if((err = inverse_bw_transform(T, T, A, m, pidx)) != 0) {
+      fprintf(stderr, "%s (reverseBWT): %s.\n",
+        argv[0],
+        (err == -1) ? "Invalid data" : "Cannot allocate memory");
+      exit(EXIT_FAILURE);
+    }
+
+    /* Write m bytes of data. */
+    if(fwrite(T, sizeof(sauchar_t), m, ofp) != m) {
+      fprintf(stderr, "%s: Cannot write to `%s': ", argv[0], ofname);
+      perror(NULL);
+      exit(EXIT_FAILURE);
+    }
+  }
+  if(ferror(fp)) {
+    fprintf(stderr, "%s: Cannot read from `%s': ", argv[0], fname);
+    perror(NULL);
     exit(EXIT_FAILURE);
   }
   finish = clock();
-  fprintf(stderr, "%.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
+  fprintf(stderr, "%" PRIdOFF_T " bytes: %.4f sec\n",
+    n, (double)(finish - start) / (double)CLOCKS_PER_SEC);
 
-  /* Write the suffix array. */
-  if(fwrite(SA, sizeof(saidx_t), (size_t)n, ofp) != (size_t)n) {
-    fprintf(stderr, "%s: Cannot write to `%s': ", argv[0], ofname);
-    perror(NULL);
-    exit(EXIT_FAILURE);
-  }
+  /* Close files */
+  if(needclose & 1) { fclose(fp); }
   if(needclose & 2) { fclose(ofp); }
 
   /* Deallocate memory. */
-  free(SA);
+  free(A);
   free(T);
 
   return 0;

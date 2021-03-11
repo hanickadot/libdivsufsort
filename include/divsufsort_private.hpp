@@ -32,7 +32,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #if HAVE_CONFIG_H
-# include "config.h"
+# include "config.hpp"
 #endif
 #include <assert.h>
 #include <stdio.h>
@@ -59,7 +59,7 @@ extern "C" {
 # endif
 #endif
 #if defined(BUILD_DIVSUFSORT64)
-# include "divsufsort64.h"
+# include "divsufsort64.hpp"
 # ifndef SAIDX_T
 #  define SAIDX_T
 #  define saidx_t saidx64_t
@@ -78,7 +78,7 @@ extern "C" {
 # define sssort sssort64
 # define trsort trsort64
 #else
-# include "divsufsort.h"
+# include "divsufsort.hpp"
 #endif
 
 

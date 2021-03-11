@@ -25,7 +25,7 @@
  */
 
 #if HAVE_CONFIG_H
-# include "config.h"
+# include "config.hpp"
 #endif
 #include <stdio.h>
 #if HAVE_STRING_H
@@ -51,8 +51,8 @@
 # include <fcntl.h>
 #endif
 #include <time.h>
-#include <divsufsort.h>
-#include "lfs.h"
+#include <divsufsort.hpp>
+#include "lfs.hpp"
 
 
 static

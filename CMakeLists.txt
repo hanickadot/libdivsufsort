@@ -1,10 +1,10 @@
 ### cmake file for building libdivsufsort Package ###
-cmake_minimum_required(VERSION 2.4.4)
+cmake_minimum_required(VERSION 3.14)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 include(AppendCompilerFlags)
 
 ## Project information ##
-project(libdivsufsort C)
+project(libdivsufsort VERSION 2.0.1)
 set(PROJECT_VENDOR "Yuta Mori")
 set(PROJECT_CONTACT "yuta.256@gmail.com")
 set(PROJECT_URL "https://github.com/y-256/libdivsufsort")
