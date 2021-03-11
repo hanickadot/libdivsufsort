@@ -330,11 +330,13 @@ ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
   for(limit = ss_ilg(last - first);;) {
 
     if((last - first) <= SS_INSERTIONSORT_THRESHOLD) {
-#if 1 < SS_INSERTIONSORT_THRESHOLD
-      if(1 < (last - first)) { ss_insertionsort(T, PA, first, last, depth); }
-#endif
+      if constexpr (1 < SS_INSERTIONSORT_THRESHOLD) {
+        if(1 < (last - first)) {
+          ss_insertionsort(T, PA, first, last, depth);
+        }
+      }
       if (stack.size() == 0) return;
-      std::tie(first, last, depth, limit) = stack.pop();
+      stack.pop_into(first, last, depth, limit);
       continue;
     }
 
@@ -475,7 +477,7 @@ ss_rotate(saidx_t *first, saidx_t *middle, saidx_t *last) {
     if(l < r) {
       a = last - 1, b = middle - 1;
       t = *a;
-      do {
+      for (;;) {
         *a-- = *b, *b-- = *a;
         if(b < first) {
           *a = t;
@@ -484,11 +486,11 @@ ss_rotate(saidx_t *first, saidx_t *middle, saidx_t *last) {
           a -= 1, b = middle - 1;
           t = *a;
         }
-      } while(1);
+      }
     } else {
       a = first, b = middle;
       t = *a;
-      do {
+      for (;;) {
         *a++ = *b, *b++ = *a;
         if(last <= b) {
           *a = t;
@@ -497,7 +499,7 @@ ss_rotate(saidx_t *first, saidx_t *middle, saidx_t *last) {
           a += 1, b = middle;
           t = *a;
         }
-      } while(1);
+      }
     }
   }
 }
@@ -697,7 +699,7 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       }
       merge_check(first, last, check);
       if (stack.size() == 0) return;
-      std::tie(first, middle, last, check) = stack.pop();
+      stack.pop_into(first, middle, last, check);
       continue;
     }
 
@@ -707,7 +709,7 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       }
       merge_check(first, last, check);
       if (stack.size() == 0) return;
-      std::tie(first, middle, last, check) = stack.pop();
+      stack.pop_into(first, middle, last, check);
       continue;
     }
 
@@ -750,7 +752,7 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       }
       merge_check(first, last, check);
       if (stack.size() == 0) return;
-      std::tie(first, middle, last, check) = stack.pop();
+      stack.pop_into(first, middle, last, check);
     }
   }
 }
@@ -775,59 +777,65 @@ sssort(const sauchar_t *T, const saidx_t *PA,
 #endif
   saidx_t i;
 
-  if(lastsuffix != 0) { ++first; }
+  if(lastsuffix != 0) {
+    ++first;
+  }
 
-#if SS_BLOCKSIZE == 0
-  ss_mintrosort(T, PA, first, last, depth);
-#else
-  if((bufsize < SS_BLOCKSIZE) &&
-      (bufsize < (last - first)) &&
-      (bufsize < (limit = ss_isqrt(last - first)))) {
-    if(SS_BLOCKSIZE < limit) { limit = SS_BLOCKSIZE; }
-    buf = middle = last - limit, bufsize = limit;
+  if constexpr (SS_BLOCKSIZE == 0) {
+    ss_mintrosort(T, PA, first, last, depth);
   } else {
-    middle = last, limit = 0;
-  }
-  for(a = first, i = 0; SS_BLOCKSIZE < (middle - a); a += SS_BLOCKSIZE, ++i) {
-#if SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE
-    ss_mintrosort(T, PA, a, a + SS_BLOCKSIZE, depth);
-#elif 1 < SS_BLOCKSIZE
-    ss_insertionsort(T, PA, a, a + SS_BLOCKSIZE, depth);
-#endif
-    curbufsize = last - (a + SS_BLOCKSIZE);
-    curbuf = a + SS_BLOCKSIZE;
-    if(curbufsize <= bufsize) { curbufsize = bufsize, curbuf = buf; }
-    for(b = a, k = SS_BLOCKSIZE, j = i; j & 1; b -= k, k <<= 1, j >>= 1) {
-      ss_swapmerge(T, PA, b - k, b, b + k, curbuf, curbufsize, depth);
+    if((bufsize < SS_BLOCKSIZE) && (bufsize < (last - first)) && (bufsize < (limit = ss_isqrt(last - first)))) {
+      if(SS_BLOCKSIZE < limit) {
+        limit = SS_BLOCKSIZE;
+      }
+      buf = middle = last - limit, bufsize = limit;
+    } else {
+      middle = last, limit = 0;
+    }
+    
+    for(a = first, i = 0; SS_BLOCKSIZE < (middle - a); a += SS_BLOCKSIZE, ++i) {
+      if constexpr (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE) {
+        ss_mintrosort(T, PA, a, a + SS_BLOCKSIZE, depth);
+      } else if constexpr (1 < SS_BLOCKSIZE) {
+        ss_insertionsort(T, PA, a, a + SS_BLOCKSIZE, depth);
+      }
+    
+      curbufsize = last - (a + SS_BLOCKSIZE);
+      curbuf = a + SS_BLOCKSIZE;
+      if(curbufsize <= bufsize) {
+        curbufsize = bufsize, curbuf = buf;
+      }
+      for(b = a, k = SS_BLOCKSIZE, j = i; j & 1; b -= k, k <<= 1, j >>= 1) {
+        ss_swapmerge(T, PA, b - k, b, b + k, curbuf, curbufsize, depth);
+      }
+    }
+  
+    if constexpr (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE) {
+      ss_mintrosort(T, PA, a, middle, depth);
+    } else if (1 < SS_BLOCKSIZE) {
+      ss_insertionsort(T, PA, a, middle, depth);
+    }
+    
+    for(k = SS_BLOCKSIZE; i != 0; k <<= 1, i >>= 1) {
+      if(i & 1) {
+        ss_swapmerge(T, PA, a - k, a, middle, buf, bufsize, depth);
+        a -= k;
+      }
+    }
+    if(limit != 0) {
+      if constexpr (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE) {
+        ss_mintrosort(T, PA, middle, last, depth);
+      } else if (1 < SS_BLOCKSIZE) {
+        ss_insertionsort(T, PA, middle, last, depth);
+      }
+      ss_inplacemerge(T, PA, first, middle, last, depth);
     }
   }
-#if SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE
-  ss_mintrosort(T, PA, a, middle, depth);
-#elif 1 < SS_BLOCKSIZE
-  ss_insertionsort(T, PA, a, middle, depth);
-#endif
-  for(k = SS_BLOCKSIZE; i != 0; k <<= 1, i >>= 1) {
-    if(i & 1) {
-      ss_swapmerge(T, PA, a - k, a, middle, buf, bufsize, depth);
-      a -= k;
-    }
-  }
-  if(limit != 0) {
-#if SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE
-    ss_mintrosort(T, PA, middle, last, depth);
-#elif 1 < SS_BLOCKSIZE
-    ss_insertionsort(T, PA, middle, last, depth);
-#endif
-    ss_inplacemerge(T, PA, first, middle, last, depth);
-  }
-#endif
 
   if(lastsuffix != 0) {
     /* Insert last type B* suffix. */
-    saidx_t PAi[2]; PAi[0] = PA[*(first - 1)], PAi[1] = n - 2;
-    for(a = first, i = *(first - 1);
-        (a < last) && ((*a < 0) || (0 < ss_compare(T, &(PAi[0]), PA + *a, depth)));
-        ++a) {
+    saidx_t PAi[2] = { PA[*(first - 1)], n - 2};
+    for(a = first, i = *(first - 1); (a < last) && ((*a < 0) || (0 < ss_compare(T, &(PAi[0]), PA + *a, depth))); ++a) {
       *(a - 1) = *a;
     }
     *(a - 1) = i;

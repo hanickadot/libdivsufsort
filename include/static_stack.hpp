@@ -40,4 +40,12 @@ template <typename T, std::size_t N> struct static_stack {
 		assert(usage > 0);
 		return data[--usage];
 	}
+	
+	constexpr void pop_into(T & obj) noexcept {
+		obj = data[--usage];
+	}
+	
+	template <typename... Ts> constexpr void pop_into(Ts & ... args) noexcept {
+		std::tie(args...) = data[--usage];
+	}
 };
