@@ -27,6 +27,10 @@
 #ifndef _DIVSUFSORT_PRIVATE_H
 #define _DIVSUFSORT_PRIVATE_H 1
 
+#include <algorithm>
+#include <cstdint>
+#include <limits>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -83,73 +87,72 @@ extern "C" {
 
 
 /*- Constants -*/
-#if !defined(UINT8_MAX)
-# define UINT8_MAX (255)
-#endif /* UINT8_MAX */
 #if defined(ALPHABET_SIZE) && (ALPHABET_SIZE < 1)
 # undef ALPHABET_SIZE
 #endif
 #if !defined(ALPHABET_SIZE)
-# define ALPHABET_SIZE (UINT8_MAX + 1)
+static constexpr size_t ALPHABET_SIZE = std::numeric_limits<uint8_t>::max() + 1;
 #endif
 /* for divsufsort.c */
-#define BUCKET_A_SIZE (ALPHABET_SIZE)
-#define BUCKET_B_SIZE (ALPHABET_SIZE * ALPHABET_SIZE)
+static constexpr size_t BUCKET_A_SIZE = ALPHABET_SIZE;
+static constexpr size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 /* for sssort.c */
-#if defined(SS_INSERTIONSORT_THRESHOLD)
-# if SS_INSERTIONSORT_THRESHOLD < 1
+#if defined(SS_INSERTIONSORT_THRESHOLD_VALUE)
+# if SS_INSERTIONSORT_THRESHOLD_VALUE < 1
 #  undef SS_INSERTIONSORT_THRESHOLD
-#  define SS_INSERTIONSORT_THRESHOLD (1)
+static constexpr size_t SS_INSERTIONSORT_THRESHOLD = 1;
+# else 
+static constexpr size_t SS_INSERTIONSORT_THRESHOLD = SS_INSERTIONSORT_THRESHOLD_VALUE;
 # endif
 #else
-# define SS_INSERTIONSORT_THRESHOLD (8)
+static constexpr size_t SS_INSERTIONSORT_THRESHOLD = 8;
 #endif
-#if defined(SS_BLOCKSIZE)
-# if SS_BLOCKSIZE < 0
-#  undef SS_BLOCKSIZE
-#  define SS_BLOCKSIZE (0)
-# elif 32768 <= SS_BLOCKSIZE
-#  undef SS_BLOCKSIZE
-#  define SS_BLOCKSIZE (32767)
+#if defined(SS_BLOCKSIZE_SIZE)
+# if SS_BLOCKSIZE_SIZE < 0
+static constexpr size_t SS_BLOCKSIZE = 0;
+# elif 32768 <= SS_BLOCKSIZE_SIZE
+static constexpr size_t SS_BLOCKSIZE = 32767;
+# else
+static constexpr size_t SS_BLOCKSIZE = SS_BLOCKSIZE_SIZE;
 # endif
 #else
-# define SS_BLOCKSIZE (1024)
+static constexpr size_t SS_BLOCKSIZE = 1024;
 #endif
 /* minstacksize = log(SS_BLOCKSIZE) / log(3) * 2 */
 #if SS_BLOCKSIZE == 0
 # if defined(BUILD_DIVSUFSORT64)
-#  define SS_MISORT_STACKSIZE (96)
+static constexpr size_t SS_MISORT_STACKSIZE = 96;
 # else
-#  define SS_MISORT_STACKSIZE (64)
+static constexpr size_t SS_MISORT_STACKSIZE = 64;
 # endif
 #elif SS_BLOCKSIZE <= 4096
-# define SS_MISORT_STACKSIZE (16)
+static constexpr size_t SS_MISORT_STACKSIZE = 16;
 #else
-# define SS_MISORT_STACKSIZE (24)
+static constexpr size_t SS_MISORT_STACKSIZE = 24;
 #endif
 #if defined(BUILD_DIVSUFSORT64)
-# define SS_SMERGE_STACKSIZE (64)
+static constexpr size_t SS_SMERGE_STACKSIZE = 64;
 #else
-# define SS_SMERGE_STACKSIZE (32)
+static constexpr size_t SS_SMERGE_STACKSIZE = 32;
 #endif
 /* for trsort.c */
-#define TR_INSERTIONSORT_THRESHOLD (8)
+static constexpr size_t TR_INSERTIONSORT_THRESHOLD = 8;
 #if defined(BUILD_DIVSUFSORT64)
-# define TR_STACKSIZE (96)
+static constexpr size_t TR_STACKSIZE = 96;
 #else
-# define TR_STACKSIZE (64)
+static constexpr size_t TR_STACKSIZE = 64;
 #endif
 
 
 /*- Macros -*/
 #ifndef SWAP
-# define SWAP(_a, _b) do { t = (_a); (_a) = (_b); (_b) = t; } while(0)
+# define SWAP(_a, _b) std::swap((_a), (_b))
 #endif /* SWAP */
 #ifndef MIN
-# define MIN(_a, _b) (((_a) < (_b)) ? (_a) : (_b))
+# define MIN(_a, _b) (std::min)((_a), (_b))
 #endif /* MIN */
 #ifndef MAX
-# define MAX(_a, _b) (((_a) > (_b)) ? (_a) : (_b))
+# define MAX(_a, _b) (std::max)((_a), (_b))
 #endif /* MAX */
 #define STACK_PUSH(_a, _b, _c, _d)\
   do {\
