@@ -358,7 +358,7 @@ divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
   else if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
 
   if((B = A) == nullptr) { 
-    B = (saidx_t *)malloc(static_cast<size_t>(n + 1) * sizeof(saidx_t));
+    B = new saidx_t[n + 1]{};
   }
 	
 	std::array<saidx_t, BUCKET_A_SIZE> bucket_A;
@@ -370,11 +370,11 @@ divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
 
   /* Copy to output string. */
   U[0] = T[n - 1];
-  for(i = 0; i < pidx; ++i) { U[i + 1] = (sauchar_t)B[i]; }
-  for(i += 1; i < n; ++i) { U[i] = (sauchar_t)B[i]; }
+  for(i = 0; i < pidx; ++i) { U[i + 1] = static_cast<sauchar_t>(B[i]); }
+  for(i += 1; i < n; ++i) { U[i] = static_cast<sauchar_t>(B[i]); }
   pidx += 1;
 
-  if(A == nullptr) { free(B); }
+  if(A == nullptr) { delete[] B; }
 
   return pidx;
 }
