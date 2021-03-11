@@ -53,24 +53,20 @@
 #include <time.h>
 #include <divsufsort.hpp>
 #include <lfs.hpp>
+#include <iostream>
+#include <chrono>
 
-static
-void
-print_help(const char *progname, int status) {
-  fprintf(stderr,
-          "suftest, a suffixsort tester, version %s.\n",
-          divsufsort_version());
-  fprintf(stderr, "usage: %s FILE\n\n", progname);
+static void print_help(const char *progname, int status) {
+	std::cerr << "suftest, a suffixsort tester, version " << divsufsort_version() << "\n";
+	std::cerr << "usage " << progname << " FILE\n\n";
   exit(status);
 }
 
-int
-main(int argc, const char *argv[]) {
+int main(int argc, const char *argv[]) {
   FILE *fp;
   const char *fname;
 
-  LFS_OFF_T n;
-  clock_t start, finish;
+  off_t n;
   int32_t needclose = 1;
 
   /* Check arguments. */
@@ -81,31 +77,21 @@ main(int argc, const char *argv[]) {
 
   /* Open a file for reading. */
   if(strcmp(argv[1], "-") != 0) {
-#if HAVE_FOPEN_S
-    if(fopen_s(&fp, fname = argv[1], "rb") != 0) {
-#else
-    if((fp = LFS_FOPEN(fname = argv[1], "rb")) == NULL) {
-#endif
+    if((fp = fopen(fname = argv[1], "rb")) == nullptr) {
+			std::cout << argv[0] << ": Cannot open file '" << fname << "': ";
       fprintf(stderr, "%s: Cannot open file `%s': ", argv[0], fname);
       perror(NULL);
       exit(EXIT_FAILURE);
     }
   } else {
-#if HAVE__SETMODE && HAVE__FILENO
-    if(_setmode(_fileno(stdin), _O_BINARY) == -1) {
-      fprintf(stderr, "%s: Cannot set mode: ", argv[0]);
-      perror(NULL);
-      exit(EXIT_FAILURE);
-    }
-#endif
     fp = stdin;
     fname = "stdin";
     needclose = 0;
   }
 
   /* Get the file size. */
-  if(LFS_FSEEK(fp, 0, SEEK_END) == 0) {
-    n = LFS_FTELL(fp);
+  if(fseek(fp, 0, SEEK_END) == 0) {
+    n = ftell(fp);
     rewind(fp);
     if(n < 0) {
       fprintf(stderr, "%s: Cannot ftell `%s': ", argv[0], fname);
@@ -124,11 +110,6 @@ main(int argc, const char *argv[]) {
 
   /* Allocate 5n bytes of memory. */
 	auto * T = new unsigned char[n];
-	auto * SA = new int[n];
-  if((T == NULL) || (SA == NULL)) {
-    fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
-    exit(EXIT_FAILURE);
-  }
 
   /* Read n bytes of data. */
   if(fread(T, sizeof(unsigned char), (size_t)n, fp) != (size_t)n) {
@@ -142,20 +123,18 @@ main(int argc, const char *argv[]) {
   if(needclose & 1) { fclose(fp); }
 
   /* Construct the suffix array. */
-  fprintf(stderr, "%s: %lld bytes ... ", fname, int64_t(n));
-  start = clock();
-  if(divsufsort(T, SA, (size_t)n) != 0) {
-    fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
-    exit(EXIT_FAILURE);
-  }
-  finish = clock();
-  fprintf(stderr, "%.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
-
+	std::cerr << fname << ": " << n << " bytes ... \n";
+  auto start = std::chrono::high_resolution_clock::now();
+	
+	auto result = divsufsort<int32_t>(std::span<const unsigned char>(reinterpret_cast<const unsigned char *>(T), n));
+	
+  auto finish = std::chrono::high_resolution_clock::now();
+	std::cerr << std::chrono::duration_cast<std::chrono::milliseconds>(finish-start).count() << " ms\n";
+  
   /* Check the suffix array. */
-  if(sufcheck(T, SA, (size_t)n, 1) != 0) { exit(EXIT_FAILURE); }
+  if(sufcheck(T, result.data(), (size_t)n, 1) != 0) { exit(EXIT_FAILURE); }
 
   /* Deallocate memory. */
-  delete[] SA;
   delete[] T;
 
   return 0;

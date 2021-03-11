@@ -318,27 +318,27 @@ template <typename CharT = unsigned char, typename ResultT = ssize_t> static Res
 
 /*- Function -*/
 
-template <typename CharT = unsigned char, typename ResultT = ssize_t> int divsufsort(const CharT *T, ResultT *SA, no_deduce<ResultT> n) {
+template <typename CharT = unsigned char, typename ResultT = ssize_t> void divsufsort(const CharT *T, ResultT *SA, no_deduce<ResultT> n) {
   /* Check arguments. */
-  if((T == nullptr) || (SA == nullptr) || (n < 0)) { return -1; }
-  else if(n == 0) { return 0; }
-  else if(n == 1) { SA[0] = 0; return 0; }
-  else if(n == 2) { bool ordered = (T[0] < T[1]); SA[ordered ^ 1] = 0, SA[ordered] = 1; return 0; }
+	assert(T != nullptr);
+	assert(SA != nullptr);
+	assert(n >= 0);
+
+  if(n == 0) { return; }
+  else if(n == 1) { SA[0] = 0; return; }
+  else if(n == 2) { bool ordered = (T[0] < T[1]); SA[ordered ^ 1] = 0, SA[ordered] = 1; return; }
 
   std::array<ResultT, bucket_A_size<CharT>> bucket_A{};
   std::array<ResultT, bucket_B_size<CharT>> bucket_B{};
 
   ResultT m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
   construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
-		
-  return 0;
 }
 
 template <typename ResultT = ssize_t, typename CharT = unsigned char> auto divsufsort(std::span<const CharT> T) -> std::vector<ResultT> {
 	auto result = std::vector<ResultT>(T.size());
 	
-	[[maybe_unused]] int rc = divsufsort(T.data(), result.data(), T.size());
-	assert(rc);
+	divsufsort(T.data(), result.data(), T.size());
 	
 	return result;
 }

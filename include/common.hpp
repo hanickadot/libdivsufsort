@@ -87,7 +87,7 @@ template <typename T> struct identity_t {
 	using type = T;
 };
 
-template <typename T> using no_deduce = identity_t<T>::type;
+template <typename T> using no_deduce = typename identity_t<T>::type;
 
 template <typename CharT> constexpr std::size_t alphabet_size = std::numeric_limits<CharT>::max() + 1;
 template <> constexpr std::size_t alphabet_size<std::byte> = std::numeric_limits<uint8_t>::max() + 1;
