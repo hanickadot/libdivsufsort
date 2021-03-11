@@ -116,7 +116,6 @@ template <typename ResultT> static void tr_heapsort(const ResultT *ISAd, ResultT
 
 /* Returns the median of three elements. */
 template <typename ResultT> static inline ResultT * tr_median3(const ResultT *ISAd, ResultT *v1, ResultT *v2, ResultT *v3) {
-  ResultT *t;
   if(ISAd[*v1] > ISAd[*v2]) { std::swap(v1, v2); }
   if(ISAd[*v2] > ISAd[*v3]) {
     if(ISAd[*v1] > ISAd[*v3]) { return v1; }
@@ -127,7 +126,6 @@ template <typename ResultT> static inline ResultT * tr_median3(const ResultT *IS
 
 /* Returns the median of five elements. */
 template <typename ResultT> static inline ResultT * tr_median5(const ResultT *ISAd, ResultT *v1, ResultT *v2, ResultT *v3, ResultT *v4, ResultT *v5) {
-  ResultT *t;
   if(ISAd[*v2] > ISAd[*v3]) { std::swap(v2, v3); }
   if(ISAd[*v4] > ISAd[*v5]) { std::swap(v4, v5); }
   if(ISAd[*v2] > ISAd[*v4]) { std::swap(v2, v4); std::swap(v3, v5); }
@@ -293,7 +291,6 @@ template <typename ResultT> static void tr_introsort(ResultT *ISA, const ResultT
   static_stack<stack_type, TR_STACKSIZE> stack;
   
   ResultT *a, *b, *c;
-  ResultT t;
   ResultT v, x = 0;
   ResultT incr = ISAd - ISA;
   int32_t limit, next;

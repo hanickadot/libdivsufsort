@@ -182,9 +182,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 /*---------------------------------------------------------------------------*/
 
 /* Returns the median of three elements. */
-// TODO use reference
 template <typename CharT = unsigned char, typename ResultT = int> static inline ResultT * ss_median3(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3) {
-  ResultT *t;
   if(Td[PA[*v1]] > Td[PA[*v2]]) { std::swap(v1, v2); }
   if(Td[PA[*v2]] > Td[PA[*v3]]) {
     if(Td[PA[*v1]] > Td[PA[*v3]]) { return v1; }
@@ -195,7 +193,6 @@ template <typename CharT = unsigned char, typename ResultT = int> static inline 
 
 /* Returns the median of five elements. */
 template <typename CharT = unsigned char, typename ResultT = int> static inline ResultT * ss_median5(const CharT *Td, const ResultT *PA, ResultT *v1, ResultT *v2, ResultT *v3, ResultT *v4, ResultT *v5) {
-  ResultT *t;
   if(Td[PA[*v2]] > Td[PA[*v3]]) { std::swap(v2, v3); }
   if(Td[PA[*v4]] > Td[PA[*v5]]) { std::swap(v4, v5); }
   if(Td[PA[*v2]] > Td[PA[*v4]]) { std::swap(v2, v4); std::swap(v3, v5); }
