@@ -32,10 +32,6 @@
 #include <cstddef>
 #include <limits>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #if HAVE_CONFIG_H
 # include "config.hpp"
 #endif
@@ -88,12 +84,14 @@ extern "C" {
 
 
 /*- Constants -*/
-static constexpr std::size_t ALPHABET_SIZE = std::numeric_limits<uint8_t>::max() + 1;
-static constexpr std::size_t BUCKET_A_SIZE = ALPHABET_SIZE;
-static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
+template <typename CharT> static constexpr std::size_t alphabet_size = std::numeric_limits<CharT>::max() + 1;
+template <> static constexpr std::size_t alphabet_size<std::byte> = std::numeric_limits<uint8_t>::max() + 1;
+	
+template <typename CharT> static constexpr std::size_t bucket_A_size = alphabet_size<CharT>;
+template <typename CharT> static constexpr std::size_t bucket_B_size = alphabet_size<CharT> * alphabet_size<CharT>;
 
-//#define BUCKET_A_SIZE (ALPHABET_SIZE)
-//#define BUCKET_B_SIZE (ALPHABET_SIZE * ALPHABET_SIZE)
+//#define bucket_A_size (alphabet_size)
+//#define bucket_B_size (alphabet_size * alphabet_size)
 /* for sssort.c */
 #if defined(SS_INSERTIONSORT_THRESHOLD)
 # if SS_INSERTIONSORT_THRESHOLD < 1
@@ -146,13 +144,8 @@ static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 #define STACK_POP5(_a, _b, _c, _d, _e) stack.pop_into((_a), (_b), (_c), (_d), (_e))
 /* for divsufsort.c */
 #define BUCKET_A(_c0) bucket_A[(_c0)]
-#if ALPHABET_SIZE == 256
-#define BUCKET_B(_c0, _c1) (bucket_B[((_c1) << 8) | (_c0)])
-#define BUCKET_BSTAR(_c0, _c1) (bucket_B[((_c0) << 8) | (_c1)])
-#else
-#define BUCKET_B(_c0, _c1) (bucket_B[(_c1) * ALPHABET_SIZE + (_c0)])
-#define BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * ALPHABET_SIZE + (_c1)])
-#endif
+#define BUCKET_B(_c0, _c1) (bucket_B[(_c1) * alphabet_size<CharT> + (_c0)])
+#define BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * alphabet_size<CharT> + (_c1)])
 
 
 /*- Private Prototypes -*/
@@ -166,9 +159,5 @@ sssort(const sauchar_t *Td, const saidx_t *PA,
 void
 trsort(saidx_t *ISA, saidx_t *SA, saidx_t n, saidx_t depth);
 
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif /* __cplusplus */
 
 #endif /* _DIVSUFSORT_PRIVATE_H */

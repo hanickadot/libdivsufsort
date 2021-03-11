@@ -25,6 +25,8 @@
  */
 
 #include "divsufsort_private.hpp"
+#include "sssort.hpp"
+#include "trsort.hpp"
 #ifdef _OPENMP
 # include <omp.h>
 #endif
@@ -33,7 +35,7 @@
 /*- Private Functions -*/
 
 /* Sorts suffixes of type B*. */
-static saidx_t sort_typeBstar(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, saidx_t *bucket_B, saidx_t n) {
+template <typename CharT = sauchar_t, typename ResultT = saidx_t> static saidx_t sort_typeBstar(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, saidx_t n) {
   saidx_t *PAb, *ISAb, *buf;
 #ifdef _OPENMP
   saidx_t *curbuf;
@@ -71,11 +73,11 @@ note:
 */
 
   /* Calculate the index of start/end point of each bucket. */
-  for(c0 = 0, i = 0, j = 0; c0 < ALPHABET_SIZE; ++c0) {
+  for(c0 = 0, i = 0, j = 0; c0 < alphabet_size<CharT>; ++c0) {
     t = i + BUCKET_A(c0);
     BUCKET_A(c0) = i + j; /* start point */
     i = t + BUCKET_B(c0, c0);
-    for(c1 = c0 + 1; c1 < ALPHABET_SIZE; ++c1) {
+    for(c1 = c0 + 1; c1 < alphabet_size<CharT>; ++c1) {
       j += BUCKET_BSTAR(c0, c1);
       BUCKET_BSTAR(c0, c1) = j; /* end point */
       i += BUCKET_B(c0, c1);
@@ -96,7 +98,7 @@ note:
 #ifdef _OPENMP
     tmp = omp_get_max_threads();
     buf = SA + m, bufsize = (n - (2 * m)) / tmp;
-    c0 = ALPHABET_SIZE - 2, c1 = ALPHABET_SIZE - 1, j = m;
+    c0 = alphabet_size<CharT> - 2, c1 = alphabet_size<CharT> - 1, j = m;
 #pragma omp parallel default(shared) private(curbuf, k, l, d0, d1, tmp)
     {
       tmp = omp_get_thread_num();
@@ -110,7 +112,7 @@ note:
             do {
               k = BUCKET_BSTAR(d0, d1);
               if(--d1 <= d0) {
-                d1 = ALPHABET_SIZE - 1;
+                d1 = alphabet_size<CharT> - 1;
                 if(--d0 < 0) { break; }
               }
             } while(((l - k) <= 1) && (0 < (l = k)));
@@ -124,8 +126,8 @@ note:
     }
 #else
     buf = SA + m, bufsize = n - (2 * m);
-    for(c0 = ALPHABET_SIZE - 2, j = m; 0 < j; --c0) {
-      for(c1 = ALPHABET_SIZE - 1; c0 < c1; j = i, --c1) {
+    for(c0 = alphabet_size<CharT> - 2, j = m; 0 < j; --c0) {
+      for(c1 = alphabet_size<CharT> - 1; c0 < c1; j = i, --c1) {
         i = BUCKET_BSTAR(c0, c1);
         if(1 < (j - i)) {
           sssort(T, PAb, SA + i, SA + j,
@@ -162,10 +164,10 @@ note:
     }
 
     /* Calculate the index of start/end point of each bucket. */
-    BUCKET_B(ALPHABET_SIZE - 1, ALPHABET_SIZE - 1) = n; /* end point */
-    for(c0 = ALPHABET_SIZE - 2, k = m - 1; 0 <= c0; --c0) {
+    BUCKET_B(alphabet_size<CharT> - 1, alphabet_size<CharT> - 1) = n; /* end point */
+    for(c0 = alphabet_size<CharT> - 2, k = m - 1; 0 <= c0; --c0) {
       i = BUCKET_A(c0 + 1) - 1;
-      for(c1 = ALPHABET_SIZE - 1; c0 < c1; --c1) {
+      for(c1 = alphabet_size<CharT> - 1; c0 < c1; --c1) {
         t = i - BUCKET_B(c0, c1);
         BUCKET_B(c0, c1) = i; /* end point */
 
@@ -183,7 +185,7 @@ note:
 }
 
 /* Constructs the suffix array by using the sorted order of type B* suffixes. */
-static void construct_SA(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, saidx_t *bucket_B, saidx_t n, saidx_t m) {
+template <typename CharT = sauchar_t, typename ResultT = saidx_t> static void construct_SA(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, saidx_t n, saidx_t m) {
   saidx_t *i, *j, *k;
   saidx_t s;
   saint_t c0, c1, c2;
@@ -191,7 +193,7 @@ static void construct_SA(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, sai
   if(0 < m) {
     /* Construct the sorted order of type B suffixes by using
        the sorted order of type B* suffixes. */
-    for(c1 = ALPHABET_SIZE - 2; 0 <= c1; --c1) {
+    for(c1 = alphabet_size<CharT> - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
       for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
           j = SA + BUCKET_A(c1 + 1) - 1, k = nullptr, c2 = -1;
@@ -243,7 +245,7 @@ static void construct_SA(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, sai
 
 /* Constructs the burrows-wheeler transformed string directly
    by using the sorted order of type B* suffixes. */
-static saidx_t construct_BWT(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, saidx_t *bucket_B, saidx_t n, saidx_t m) {
+template <typename CharT = sauchar_t, typename ResultT = saidx_t> static saidx_t construct_BWT(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, saidx_t n, saidx_t m) {
   saidx_t *i, *j, *k, *orig;
   saidx_t s;
   saint_t c0, c1, c2;
@@ -251,7 +253,7 @@ static saidx_t construct_BWT(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A,
   if(0 < m) {
     /* Construct the sorted order of type B suffixes by using
        the sorted order of type B* suffixes. */
-    for(c1 = ALPHABET_SIZE - 2; 0 <= c1; --c1) {
+    for(c1 = alphabet_size<CharT> - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
       for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
           j = SA + BUCKET_A(c1 + 1) - 1, k = nullptr, c2 = -1;
@@ -311,15 +313,15 @@ static saidx_t construct_BWT(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A,
 
 /*- Function -*/
 
-saint_t divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n) {
+template <typename CharT = sauchar_t, typename ResultT = saidx_t> saint_t divsufsort(const CharT *T, ResultT *SA, saidx_t n) {
   /* Check arguments. */
   if((T == nullptr) || (SA == nullptr) || (n < 0)) { return -1; }
   else if(n == 0) { return 0; }
   else if(n == 1) { SA[0] = 0; return 0; }
   else if(n == 2) { bool ordered = (T[0] < T[1]); SA[ordered ^ 1] = 0, SA[ordered] = 1; return 0; }
 
-  std::array<saidx_t, BUCKET_A_SIZE> bucket_A{};
-  std::array<saidx_t, BUCKET_B_SIZE> bucket_B{};
+  std::array<ResultT, bucket_A_size<CharT>> bucket_A{};
+  std::array<ResultT, bucket_B_size<CharT>> bucket_B{};
 
   saidx_t m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
   construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
@@ -327,7 +329,7 @@ saint_t divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n) {
   return 0;
 }
 
-saidx_t divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
+template <typename CharT = sauchar_t, typename ResultT = saidx_t> saidx_t divbwt(const CharT *T, CharT *U, ResultT *A, saidx_t n) {
   saidx_t *B;
 
   /* Check arguments. */
@@ -338,8 +340,8 @@ saidx_t divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
     B = new saidx_t[n + 1]{};
   }
 	
-	std::array<saidx_t, BUCKET_A_SIZE> bucket_A{};
-	std::array<saidx_t, BUCKET_B_SIZE> bucket_B{};
+	std::array<saidx_t, bucket_A_size<sauchar_t>> bucket_A{};
+	std::array<saidx_t, bucket_B_size<sauchar_t>> bucket_B{};
 
   /* Burrows-Wheeler Transform. */
   saidx_t m = sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
