@@ -275,7 +275,7 @@ sa_search(const sauchar_t *T, saidx_t Tsize,
   for(i = j = k = 0, lmatch = rmatch = 0, size = SAsize, half = size >> 1;
       0 < size;
       size = half, half >>= 1) {
-    match = MIN(lmatch, rmatch);
+    match = std::min(lmatch, rmatch);
     r = _compare(T, Tsize, P, Psize, SA[i + half], &match);
     if(r < 0) {
       i += half + 1;
@@ -290,7 +290,7 @@ sa_search(const sauchar_t *T, saidx_t Tsize,
       for(llmatch = lmatch, lrmatch = match, half = lsize >> 1;
           0 < lsize;
           lsize = half, half >>= 1) {
-        lmatch = MIN(llmatch, lrmatch);
+        lmatch = std::min(llmatch, lrmatch);
         r = _compare(T, Tsize, P, Psize, SA[j + half], &lmatch);
         if(r < 0) {
           j += half + 1;
@@ -305,7 +305,7 @@ sa_search(const sauchar_t *T, saidx_t Tsize,
       for(rlmatch = match, rrmatch = rmatch, half = rsize >> 1;
           0 < rsize;
           rsize = half, half >>= 1) {
-        rmatch = MIN(rlmatch, rrmatch);
+        rmatch = std::min(rlmatch, rrmatch);
         r = _compare(T, Tsize, P, Psize, SA[k + half], &rmatch);
         if(r <= 0) {
           k += half + 1;
