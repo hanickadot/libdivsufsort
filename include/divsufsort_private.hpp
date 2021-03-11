@@ -27,6 +27,7 @@
 #ifndef _DIVSUFSORT_PRIVATE_H
 #define _DIVSUFSORT_PRIVATE_H 1
 
+#include "static_stack.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <limits>
@@ -141,25 +142,14 @@ static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 
 /*- Macros -*/
 
-#define STACK_PUSH(_a, _b, _c, _d)\
-  do {\
-    assert(ssize < STACK_SIZE);\
-    stack[ssize].a = (_a), stack[ssize].b = (_b),\
-    stack[ssize].c = (_c), stack[ssize++].d = (_d);\
-  } while(0)
+#define STACK_PUSH(_a, _b, _c, _d) stack.push((_a), (_b), (_c), (_d));
 #define STACK_PUSH5(_a, _b, _c, _d, _e)\
   do {\
     assert(ssize < STACK_SIZE);\
     stack[ssize].a = (_a), stack[ssize].b = (_b),\
     stack[ssize].c = (_c), stack[ssize].d = (_d), stack[ssize++].e = (_e);\
   } while(0)
-#define STACK_POP(_a, _b, _c, _d)\
-  do {\
-    assert(0 <= ssize);\
-    if(ssize == 0) { return; }\
-    (_a) = stack[--ssize].a, (_b) = stack[ssize].b,\
-    (_c) = stack[ssize].c, (_d) = stack[ssize].d;\
-  } while(0)
+#define STACK_POP(_a, _b, _c, _d) std::tie((_a), (_b), (_c), (_d)) = stack.pop()
 #define STACK_POP5(_a, _b, _c, _d, _e)\
   do {\
     assert(0 <= ssize);\

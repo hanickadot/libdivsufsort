@@ -310,21 +310,29 @@ void
 ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
               saidx_t *first, saidx_t *last,
               saidx_t depth) {
-#define STACK_SIZE SS_MISORT_STACKSIZE
-  struct { saidx_t *a, *b, c; saint_t d; } stack[STACK_SIZE];
+  struct stack_type {
+    saidx_t *a;
+    saidx_t *b;
+    saidx_t c;
+    saint_t d;
+    constexpr operator auto() noexcept {
+      return std::tie(a,b,c,d);
+    }
+  };
+  static_stack<stack_type, SS_MISORT_STACKSIZE> stack;
   const sauchar_t *Td;
   saidx_t *a, *b, *c, *d, *e, *f;
   saidx_t s, t;
-  saint_t ssize;
   saint_t limit;
   saint_t v, x = 0;
 
-  for(ssize = 0, limit = ss_ilg(last - first);;) {
+  for(limit = ss_ilg(last - first);;) {
 
     if((last - first) <= SS_INSERTIONSORT_THRESHOLD) {
 #if 1 < SS_INSERTIONSORT_THRESHOLD
       if(1 < (last - first)) { ss_insertionsort(T, PA, first, last, depth); }
 #endif
+      if (stack.size() == 0) return;
       STACK_POP(first, last, depth, limit);
       continue;
     }
@@ -437,7 +445,6 @@ ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
       depth += 1;
     }
   }
-#undef STACK_SIZE
 }
 
 #endif /* (SS_BLOCKSIZE == 0) || (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE) */
@@ -654,7 +661,6 @@ void
 ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
              saidx_t *first, saidx_t *middle, saidx_t *last,
              saidx_t *buf, saidx_t bufsize, saidx_t depth) {
-#define STACK_SIZE SS_SMERGE_STACKSIZE
 #define GETIDX(a) ((0 <= (a)) ? (a) : (~(a)))
 #define MERGE_CHECK(a, b, c)\
   do {\
@@ -666,18 +672,27 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
       *(b) = ~*(b);\
     }\
   } while(0)
-  struct { saidx_t *a, *b, *c; saint_t d; } stack[STACK_SIZE];
+  struct stack_type {
+    saidx_t *a;
+    saidx_t *b;
+    saidx_t *c;
+    saint_t d;
+    constexpr operator auto() noexcept {
+      return std::tie(a,b,c,d);
+    }
+  };
+  static_stack<stack_type, SS_SMERGE_STACKSIZE> stack;
   saidx_t *l, *r, *lm, *rm;
   saidx_t m, len, half;
-  saint_t ssize;
   saint_t check, next;
 
-  for(check = 0, ssize = 0;;) {
+  for(check = 0;;) {
     if((last - middle) <= bufsize) {
       if((first < middle) && (middle < last)) {
         ss_mergebackward(T, PA, first, middle, last, buf, depth);
       }
       MERGE_CHECK(first, last, check);
+      if (stack.size() == 0) return;
       STACK_POP(first, middle, last, check);
       continue;
     }
@@ -687,6 +702,7 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
         ss_mergeforward(T, PA, first, middle, last, buf, depth);
       }
       MERGE_CHECK(first, last, check);
+      if (stack.size() == 0) return;
       STACK_POP(first, middle, last, check);
       continue;
     }
@@ -729,10 +745,10 @@ ss_swapmerge(const sauchar_t *T, const saidx_t *PA,
         *middle = ~*middle;
       }
       MERGE_CHECK(first, last, check);
+      if (stack.size() == 0) return;
       STACK_POP(first, middle, last, check);
     }
   }
-#undef STACK_SIZE
 }
 
 #endif /* SS_BLOCKSIZE != 0 */
