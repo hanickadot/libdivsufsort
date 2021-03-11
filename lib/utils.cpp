@@ -30,9 +30,7 @@
 /*- Private Function -*/
 
 /* Binary search for inverse bwt. */
-static
-saidx_t
-binarysearch_lower(const saidx_t *A, saidx_t size, saidx_t value) {
+static saidx_t binarysearch_lower(const saidx_t *A, saidx_t size, saidx_t value) {
   saidx_t half, i;
   for(i = 0, half = size >> 1;
       0 < size;
@@ -49,9 +47,7 @@ binarysearch_lower(const saidx_t *A, saidx_t size, saidx_t value) {
 /*- Functions -*/
 
 /* Burrows-Wheeler transform. */
-saint_t
-bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA,
-             saidx_t n, saidx_t *idx) {
+saint_t bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA, saidx_t n, saidx_t *idx) {
   saidx_t *A, i, j, p, t;
   saint_t c;
 
@@ -108,9 +104,7 @@ bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA,
 }
 
 /* Inverse Burrows-Wheeler transform. */
-saint_t
-inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A,
-                     saidx_t n, saidx_t idx) {
+saint_t inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n, saidx_t idx) {
   saidx_t C[ALPHABET_SIZE];
   sauchar_t D[ALPHABET_SIZE];
   saidx_t *B;
@@ -160,9 +154,7 @@ inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A,
 }
 
 /* Checks the suffix array SA of the string T. */
-saint_t
-sufcheck(const sauchar_t *T, const saidx_t *SA,
-         saidx_t n, saint_t verbose) {
+saint_t sufcheck(const sauchar_t *T, const saidx_t *SA, saidx_t n, saint_t verbose) {
   saidx_t C[ALPHABET_SIZE];
   saidx_t i, p, q, t;
   saint_t c;
@@ -244,25 +236,16 @@ sufcheck(const sauchar_t *T, const saidx_t *SA,
 }
 
 
-static
-int
-_compare(const sauchar_t *T, saidx_t Tsize,
-         const sauchar_t *P, saidx_t Psize,
-         saidx_t suf, saidx_t *match) {
+static int _compare(const sauchar_t *T, saidx_t Tsize, const sauchar_t *P, saidx_t Psize, saidx_t suf, saidx_t *match) {
   saidx_t i, j;
   saint_t r;
-  for(i = suf + *match, j = *match, r = 0;
-      (i < Tsize) && (j < Psize) && ((r = T[i] - P[j]) == 0); ++i, ++j) { }
+  for(i = suf + *match, j = *match, r = 0; (i < Tsize) && (j < Psize) && ((r = T[i] - P[j]) == 0); ++i, ++j) { }
   *match = j;
   return (r == 0) ? -(j != Psize) : r;
 }
 
 /* Search for the pattern P in the string T. */
-saidx_t
-sa_search(const sauchar_t *T, saidx_t Tsize,
-          const sauchar_t *P, saidx_t Psize,
-          const saidx_t *SA, saidx_t SAsize,
-          saidx_t *idx) {
+saidx_t sa_search(const sauchar_t *T, saidx_t Tsize, const sauchar_t *P, saidx_t Psize, const saidx_t *SA, saidx_t SAsize, saidx_t *idx) {
   saidx_t size, lsize, rsize, half;
   saidx_t match, lmatch, rmatch;
   saidx_t llmatch, lrmatch, rlmatch, rrmatch;
@@ -270,8 +253,7 @@ sa_search(const sauchar_t *T, saidx_t Tsize,
   saint_t r;
 
   if(idx != nullptr) { *idx = -1; }
-  if((T == nullptr) || (P == nullptr) || (SA == nullptr) ||
-     (Tsize < 0) || (Psize < 0) || (SAsize < 0)) { return -1; }
+  if((T == nullptr) || (P == nullptr) || (SA == nullptr) || (Tsize < 0) || (Psize < 0) || (SAsize < 0)) { return -1; }
   if((Tsize == 0) || (SAsize == 0)) { return 0; }
   if(Psize == 0) { if(idx != nullptr) { *idx = 0; } return SAsize; }
 
@@ -328,10 +310,7 @@ sa_search(const sauchar_t *T, saidx_t Tsize,
 }
 
 /* Search for the character c in the string T. */
-saidx_t
-sa_simplesearch(const sauchar_t *T, saidx_t Tsize,
-                const saidx_t *SA, saidx_t SAsize,
-                saint_t c, saidx_t *idx) {
+saidx_t sa_simplesearch(const sauchar_t *T, saidx_t Tsize, const saidx_t *SA, saidx_t SAsize, saint_t c, saidx_t *idx) {
   saidx_t size, lsize, rsize, half;
   saidx_t i, j, k, p;
   saint_t r;

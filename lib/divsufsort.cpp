@@ -33,11 +33,7 @@
 /*- Private Functions -*/
 
 /* Sorts suffixes of type B*. */
-static
-saidx_t
-sort_typeBstar(const sauchar_t *T, saidx_t *SA,
-               saidx_t *bucket_A, saidx_t *bucket_B,
-               saidx_t n) {
+static saidx_t sort_typeBstar(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, saidx_t *bucket_B, saidx_t n) {
   saidx_t *PAb, *ISAb, *buf;
 #ifdef _OPENMP
   saidx_t *curbuf;
@@ -187,11 +183,7 @@ note:
 }
 
 /* Constructs the suffix array by using the sorted order of type B* suffixes. */
-static
-void
-construct_SA(const sauchar_t *T, saidx_t *SA,
-             saidx_t *bucket_A, saidx_t *bucket_B,
-             saidx_t n, saidx_t m) {
+static void construct_SA(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, saidx_t *bucket_B, saidx_t n, saidx_t m) {
   saidx_t *i, *j, *k;
   saidx_t s;
   saint_t c0, c1, c2;
@@ -251,11 +243,7 @@ construct_SA(const sauchar_t *T, saidx_t *SA,
 
 /* Constructs the burrows-wheeler transformed string directly
    by using the sorted order of type B* suffixes. */
-static
-saidx_t
-construct_BWT(const sauchar_t *T, saidx_t *SA,
-              saidx_t *bucket_A, saidx_t *bucket_B,
-              saidx_t n, saidx_t m) {
+static saidx_t construct_BWT(const sauchar_t *T, saidx_t *SA, saidx_t *bucket_A, saidx_t *bucket_B, saidx_t n, saidx_t m) {
   saidx_t *i, *j, *k, *orig;
   saidx_t s;
   saint_t c0, c1, c2;
@@ -323,8 +311,7 @@ construct_BWT(const sauchar_t *T, saidx_t *SA,
 
 /*- Function -*/
 
-saint_t
-divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n) {
+saint_t divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n) {
   /* Check arguments. */
   if((T == nullptr) || (SA == nullptr) || (n < 0)) { return -1; }
   else if(n == 0) { return 0; }
@@ -340,8 +327,7 @@ divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n) {
   return 0;
 }
 
-saidx_t
-divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
+saidx_t divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
   saidx_t *B;
 
   /* Check arguments. */
@@ -371,7 +357,6 @@ divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
   return pidx;
 }
 
-const char *
-divsufsort_version(void) {
+const char * divsufsort_version(void) {
   return PROJECT_VERSION_FULL;
 }

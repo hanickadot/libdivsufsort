@@ -40,9 +40,7 @@ static constexpr inline saint_t lg_table[256]= {
   7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
 };
 
-static inline
-saint_t
-tr_ilg(saidx_t n) {
+static inline saint_t tr_ilg(saidx_t n) {
 #if defined(BUILD_DIVSUFSORT64)
   return (n >> 32) ?
           ((n >> 48) ?
@@ -74,9 +72,7 @@ tr_ilg(saidx_t n) {
 /*---------------------------------------------------------------------------*/
 
 /* Simple insertionsort for small size groups. */
-static
-void
-tr_insertionsort(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
+static void tr_insertionsort(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
   saidx_t *a, *b;
   saidx_t t, r;
 
@@ -93,9 +89,7 @@ tr_insertionsort(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
 
 /*---------------------------------------------------------------------------*/
 
-static inline
-void
-tr_fixdown(const saidx_t *ISAd, saidx_t *SA, saidx_t i, saidx_t size) {
+static inline void tr_fixdown(const saidx_t *ISAd, saidx_t *SA, saidx_t i, saidx_t size) {
   saidx_t j, k;
   saidx_t v;
   saidx_t c, d, e;
@@ -109,9 +103,7 @@ tr_fixdown(const saidx_t *ISAd, saidx_t *SA, saidx_t i, saidx_t size) {
 }
 
 /* Simple top-down heapsort. */
-static
-void
-tr_heapsort(const saidx_t *ISAd, saidx_t *SA, saidx_t size) {
+static void tr_heapsort(const saidx_t *ISAd, saidx_t *SA, saidx_t size) {
   saidx_t i, m;
   saidx_t t;
 
@@ -134,9 +126,7 @@ tr_heapsort(const saidx_t *ISAd, saidx_t *SA, saidx_t size) {
 /*---------------------------------------------------------------------------*/
 
 /* Returns the median of three elements. */
-static inline
-saidx_t *
-tr_median3(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2, saidx_t *v3) {
+static inline saidx_t * tr_median3(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2, saidx_t *v3) {
   saidx_t *t;
   if(ISAd[*v1] > ISAd[*v2]) { std::swap(v1, v2); }
   if(ISAd[*v2] > ISAd[*v3]) {
@@ -147,10 +137,7 @@ tr_median3(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2, saidx_t *v3) {
 }
 
 /* Returns the median of five elements. */
-static inline
-saidx_t *
-tr_median5(const saidx_t *ISAd,
-           saidx_t *v1, saidx_t *v2, saidx_t *v3, saidx_t *v4, saidx_t *v5) {
+static inline saidx_t * tr_median5(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2, saidx_t *v3, saidx_t *v4, saidx_t *v5) {
   saidx_t *t;
   if(ISAd[*v2] > ISAd[*v3]) { std::swap(v2, v3); }
   if(ISAd[*v4] > ISAd[*v5]) { std::swap(v4, v5); }
@@ -162,9 +149,7 @@ tr_median5(const saidx_t *ISAd,
 }
 
 /* Returns the pivot element. */
-static inline
-saidx_t *
-tr_pivot(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
+static inline saidx_t * tr_pivot(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
   saidx_t *middle;
   saidx_t t;
 
@@ -189,24 +174,19 @@ tr_pivot(const saidx_t *ISAd, saidx_t *first, saidx_t *last) {
 
 /*---------------------------------------------------------------------------*/
 
-typedef struct _trbudget_t trbudget_t;
-struct _trbudget_t {
+struct trbudget_t {
   saidx_t chance;
   saidx_t remain;
   saidx_t incval;
   saidx_t count;
 };
 
-static inline
-void
-trbudget_init(trbudget_t *budget, saidx_t chance, saidx_t incval) {
+static inline void trbudget_init(trbudget_t *budget, saidx_t chance, saidx_t incval) {
   budget->chance = chance;
   budget->remain = budget->incval = incval;
 }
 
-static inline
-saint_t
-trbudget_check(trbudget_t *budget, saidx_t size) {
+static inline saint_t trbudget_check(trbudget_t *budget, saidx_t size) {
   if(size <= budget->remain) { budget->remain -= size; return 1; }
   if(budget->chance == 0) { budget->count += size; return 0; }
   budget->remain += budget->incval - size;
@@ -217,9 +197,7 @@ trbudget_check(trbudget_t *budget, saidx_t size) {
 
 /*---------------------------------------------------------------------------*/
 
-static inline
-void
-tr_partition(const saidx_t *ISAd,
+static inline void tr_partition(const saidx_t *ISAd,
              saidx_t *first, saidx_t *middle, saidx_t *last,
              saidx_t **pa, saidx_t **pb, saidx_t v) {
   saidx_t *a, *b, *c, *d, *e, *f;
@@ -259,11 +237,7 @@ tr_partition(const saidx_t *ISAd,
   *pa = first, *pb = last;
 }
 
-static
-void
-tr_copy(saidx_t *ISA, const saidx_t *SA,
-        saidx_t *first, saidx_t *a, saidx_t *b, saidx_t *last,
-        saidx_t depth) {
+static void tr_copy(saidx_t *ISA, const saidx_t *SA, saidx_t *first, saidx_t *a, saidx_t *b, saidx_t *last, saidx_t depth) {
   /* sort suffixes of middle partition
      by using sorted order of suffixes of left and right partition. */
   saidx_t *c, *d, *e;
@@ -284,11 +258,7 @@ tr_copy(saidx_t *ISA, const saidx_t *SA,
   }
 }
 
-static
-void
-tr_partialcopy(saidx_t *ISA, const saidx_t *SA,
-               saidx_t *first, saidx_t *a, saidx_t *b, saidx_t *last,
-               saidx_t depth) {
+static void tr_partialcopy(saidx_t *ISA, const saidx_t *SA, saidx_t *first, saidx_t *a, saidx_t *b, saidx_t *last, saidx_t depth) {
   saidx_t *c, *d, *e;
   saidx_t s, v;
   saidx_t rank, lastrank, newrank = -1;
@@ -322,11 +292,7 @@ tr_partialcopy(saidx_t *ISA, const saidx_t *SA,
   }
 }
 
-static
-void
-tr_introsort(saidx_t *ISA, const saidx_t *ISAd,
-             saidx_t *SA, saidx_t *first, saidx_t *last,
-             trbudget_t *budget) {
+static void tr_introsort(saidx_t *ISA, const saidx_t *ISAd, saidx_t *SA, saidx_t *first, saidx_t *last, trbudget_t *budget) {
   struct stack_type {
     const saidx_t *a;
     saidx_t *b;
@@ -571,8 +537,7 @@ tr_introsort(saidx_t *ISA, const saidx_t *ISAd,
 /*- Function -*/
 
 /* Tandem repeat sort */
-void
-trsort(saidx_t *ISA, saidx_t *SA, saidx_t n, saidx_t depth) {
+void trsort(saidx_t *ISA, saidx_t *SA, saidx_t n, saidx_t depth) {
   saidx_t *ISAd;
   saidx_t *first, *last;
   trbudget_t budget;
