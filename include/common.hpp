@@ -4,12 +4,10 @@
 #include <cstdint>
 #include <cstddef>
 #include <limits>
-
-#define LFS_OFF_T long
-#define LFS_FOPEN fopen
-#define LFS_FTELL ftell
-#define LFS_FSEEK fseek
-#define LFS_PRId "ld"
+#include <array>
+#include <cassert>
+#include <cstddef>
+#include <tuple>
 
 #if defined(SS_INSERTIONSORT_THRESHOLD)
 # if SS_INSERTIONSORT_THRESHOLD < 1
@@ -96,5 +94,53 @@ template <> constexpr std::size_t alphabet_size<std::byte> = std::numeric_limits
 	
 template <typename CharT> constexpr std::size_t bucket_A_size = alphabet_size<CharT>;
 template <typename CharT> constexpr std::size_t bucket_B_size = alphabet_size<CharT> * alphabet_size<CharT>;
+
+template <typename T, std::size_t N> struct static_stack {
+	std::array<T, N> data{};
+	std::size_t usage = 0;
+	
+	constexpr std::size_t size() const noexcept {
+		return usage;
+	}
+	
+	constexpr T & operator[](std::size_t idx) noexcept {
+		assert(idx < usage);
+		return data[idx];
+	}
+	
+	constexpr const T & operator[](std::size_t idx) const noexcept {
+		assert(idx < usage);
+		return data[idx];
+	}
+	
+	template <typename... Ts> constexpr void push(Ts && ... args) noexcept {
+		assert(usage < data.size());
+		data[usage++] = T{std::forward<Ts>(args)...};
+	}
+	
+	constexpr T & top() noexcept {
+		assert(usage > 0);
+		return data[usage-1];
+	}
+	
+	constexpr const T & top() const noexcept {
+		assert(usage > 0);
+		return data[usage-1];
+	}
+	
+	constexpr T pop() noexcept {
+		assert(usage > 0);
+		return data[--usage];
+	}
+	
+	constexpr void pop_into(T & obj) noexcept {
+		obj = data[--usage];
+	}
+	
+	template <typename... Ts> constexpr void pop_into(Ts & ... args) noexcept {
+		std::tie(args...) = data[--usage];
+	}
+};
+
 
 #endif

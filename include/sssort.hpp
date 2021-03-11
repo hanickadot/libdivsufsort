@@ -25,7 +25,6 @@
  */
 
 #include "common.hpp"
-#include "static_stack.hpp"
 
 /*- Private Functions -*/
 

@@ -52,7 +52,7 @@
 #endif
 #include <time.h>
 #include <divsufsort.hpp>
-
+#include <lfs.hpp>
 
 static
 void
