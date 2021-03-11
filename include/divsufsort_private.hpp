@@ -140,16 +140,13 @@ static constexpr std::size_t BUCKET_B_SIZE = ALPHABET_SIZE * ALPHABET_SIZE;
 
 
 /*- Macros -*/
-#ifndef SWAP
-#define SWAP(_a, _b) std::swap((_a), (_b))
-	//# define SWAP(_a, _b) do { t = (_a); (_a) = (_b); (_b) = t; } while(0)
-#endif /* SWAP */
 #ifndef MIN
 # define MIN(_a, _b) std::min((_a), (_b))
 #endif /* MIN */
 #ifndef MAX
 # define MAX(_a, _b) std::max((_a), (_b))
 #endif /* MAX */
+
 #define STACK_PUSH(_a, _b, _c, _d)\
   do {\
     assert(ssize < STACK_SIZE);\

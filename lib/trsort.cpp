@@ -118,11 +118,11 @@ tr_heapsort(const saidx_t *ISAd, saidx_t *SA, saidx_t size) {
   m = size;
   if((size % 2) == 0) {
     m--;
-    if(ISAd[SA[m / 2]] < ISAd[SA[m]]) { SWAP(SA[m], SA[m / 2]); }
+    if(ISAd[SA[m / 2]] < ISAd[SA[m]]) { std::swap(SA[m], SA[m / 2]); }
   }
 
   for(i = m / 2 - 1; 0 <= i; --i) { tr_fixdown(ISAd, SA, i, m); }
-  if((size % 2) == 0) { SWAP(SA[0], SA[m]); tr_fixdown(ISAd, SA, 0, m); }
+  if((size % 2) == 0) { std::swap(SA[0], SA[m]); tr_fixdown(ISAd, SA, 0, m); }
   for(i = m - 1; 0 < i; --i) {
     t = SA[0], SA[0] = SA[i];
     tr_fixdown(ISAd, SA, 0, i);
@@ -138,7 +138,7 @@ static INLINE
 saidx_t *
 tr_median3(const saidx_t *ISAd, saidx_t *v1, saidx_t *v2, saidx_t *v3) {
   saidx_t *t;
-  if(ISAd[*v1] > ISAd[*v2]) { SWAP(v1, v2); }
+  if(ISAd[*v1] > ISAd[*v2]) { std::swap(v1, v2); }
   if(ISAd[*v2] > ISAd[*v3]) {
     if(ISAd[*v1] > ISAd[*v3]) { return v1; }
     else { return v3; }
@@ -152,11 +152,11 @@ saidx_t *
 tr_median5(const saidx_t *ISAd,
            saidx_t *v1, saidx_t *v2, saidx_t *v3, saidx_t *v4, saidx_t *v5) {
   saidx_t *t;
-  if(ISAd[*v2] > ISAd[*v3]) { SWAP(v2, v3); }
-  if(ISAd[*v4] > ISAd[*v5]) { SWAP(v4, v5); }
-  if(ISAd[*v2] > ISAd[*v4]) { SWAP(v2, v4); SWAP(v3, v5); }
-  if(ISAd[*v1] > ISAd[*v3]) { SWAP(v1, v3); }
-  if(ISAd[*v1] > ISAd[*v4]) { SWAP(v1, v4); SWAP(v3, v5); }
+  if(ISAd[*v2] > ISAd[*v3]) { std::swap(v2, v3); }
+  if(ISAd[*v4] > ISAd[*v5]) { std::swap(v4, v5); }
+  if(ISAd[*v2] > ISAd[*v4]) { std::swap(v2, v4); std::swap(v3, v5); }
+  if(ISAd[*v1] > ISAd[*v3]) { std::swap(v1, v3); }
+  if(ISAd[*v1] > ISAd[*v4]) { std::swap(v1, v4); std::swap(v3, v5); }
   if(ISAd[*v3] > ISAd[*v4]) { return v4; }
   return v3;
 }
@@ -229,31 +229,31 @@ tr_partition(const saidx_t *ISAd,
   for(b = middle - 1; (++b < last) && ((x = ISAd[*b]) == v);) { }
   if(((a = b) < last) && (x < v)) {
     for(; (++b < last) && ((x = ISAd[*b]) <= v);) {
-      if(x == v) { SWAP(*b, *a); ++a; }
+      if(x == v) { std::swap(*b, *a); ++a; }
     }
   }
   for(c = last; (b < --c) && ((x = ISAd[*c]) == v);) { }
   if((b < (d = c)) && (x > v)) {
     for(; (b < --c) && ((x = ISAd[*c]) >= v);) {
-      if(x == v) { SWAP(*c, *d); --d; }
+      if(x == v) { std::swap(*c, *d); --d; }
     }
   }
   for(; b < c;) {
-    SWAP(*b, *c);
+    std::swap(*b, *c);
     for(; (++b < c) && ((x = ISAd[*b]) <= v);) {
-      if(x == v) { SWAP(*b, *a); ++a; }
+      if(x == v) { std::swap(*b, *a); ++a; }
     }
     for(; (b < --c) && ((x = ISAd[*c]) >= v);) {
-      if(x == v) { SWAP(*c, *d); --d; }
+      if(x == v) { std::swap(*c, *d); --d; }
     }
   }
 
   if(a <= d) {
     c = b - 1;
     if((s = a - first) > (t = b - a)) { s = t; }
-    for(e = first, f = b - s; 0 < s; --s, ++e, ++f) { SWAP(*e, *f); }
+    for(e = first, f = b - s; 0 < s; --s, ++e, ++f) { std::swap(*e, *f); }
     if((s = d - c) > (t = last - d - 1)) { s = t; }
-    for(e = b, f = last - s; 0 < s; --s, ++e, ++f) { SWAP(*e, *f); }
+    for(e = b, f = last - s; 0 < s; --s, ++e, ++f) { std::swap(*e, *f); }
     first += (b - a), last -= (d - c);
   }
   *pa = first, *pb = last;
@@ -443,7 +443,7 @@ tr_introsort(saidx_t *ISA, const saidx_t *ISAd,
 
     /* choose pivot */
     a = tr_pivot(ISAd, first, last);
-    SWAP(*first, *a);
+    std::swap(*first, *a);
     v = ISAd[*first];
 
     /* partition */

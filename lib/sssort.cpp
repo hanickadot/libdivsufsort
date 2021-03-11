@@ -213,11 +213,11 @@ ss_heapsort(const sauchar_t *Td, const saidx_t *PA, saidx_t *SA, saidx_t size) {
   m = size;
   if((size % 2) == 0) {
     m--;
-    if(Td[PA[SA[m / 2]]] < Td[PA[SA[m]]]) { SWAP(SA[m], SA[m / 2]); }
+    if(Td[PA[SA[m / 2]]] < Td[PA[SA[m]]]) { std::swap(SA[m], SA[m / 2]); }
   }
 
   for(i = m / 2 - 1; 0 <= i; --i) { ss_fixdown(Td, PA, SA, i, m); }
-  if((size % 2) == 0) { SWAP(SA[0], SA[m]); ss_fixdown(Td, PA, SA, 0, m); }
+  if((size % 2) == 0) { std::swap(SA[0], SA[m]); ss_fixdown(Td, PA, SA, 0, m); }
   for(i = m - 1; 0 < i; --i) {
     t = SA[0], SA[0] = SA[i];
     ss_fixdown(Td, PA, SA, 0, i);
@@ -234,7 +234,7 @@ saidx_t *
 ss_median3(const sauchar_t *Td, const saidx_t *PA,
            saidx_t *v1, saidx_t *v2, saidx_t *v3) {
   saidx_t *t;
-  if(Td[PA[*v1]] > Td[PA[*v2]]) { SWAP(v1, v2); }
+  if(Td[PA[*v1]] > Td[PA[*v2]]) { std::swap(v1, v2); }
   if(Td[PA[*v2]] > Td[PA[*v3]]) {
     if(Td[PA[*v1]] > Td[PA[*v3]]) { return v1; }
     else { return v3; }
@@ -248,11 +248,11 @@ saidx_t *
 ss_median5(const sauchar_t *Td, const saidx_t *PA,
            saidx_t *v1, saidx_t *v2, saidx_t *v3, saidx_t *v4, saidx_t *v5) {
   saidx_t *t;
-  if(Td[PA[*v2]] > Td[PA[*v3]]) { SWAP(v2, v3); }
-  if(Td[PA[*v4]] > Td[PA[*v5]]) { SWAP(v4, v5); }
-  if(Td[PA[*v2]] > Td[PA[*v4]]) { SWAP(v2, v4); SWAP(v3, v5); }
-  if(Td[PA[*v1]] > Td[PA[*v3]]) { SWAP(v1, v3); }
-  if(Td[PA[*v1]] > Td[PA[*v4]]) { SWAP(v1, v4); SWAP(v3, v5); }
+  if(Td[PA[*v2]] > Td[PA[*v3]]) { std::swap(v2, v3); }
+  if(Td[PA[*v4]] > Td[PA[*v5]]) { std::swap(v4, v5); }
+  if(Td[PA[*v2]] > Td[PA[*v4]]) { std::swap(v2, v4); std::swap(v3, v5); }
+  if(Td[PA[*v1]] > Td[PA[*v3]]) { std::swap(v1, v3); }
+  if(Td[PA[*v1]] > Td[PA[*v4]]) { std::swap(v1, v4); std::swap(v3, v5); }
   if(Td[PA[*v3]] > Td[PA[*v4]]) { return v4; }
   return v3;
 }
@@ -363,28 +363,28 @@ ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
     /* choose pivot */
     a = ss_pivot(Td, PA, first, last);
     v = Td[PA[*a]];
-    SWAP(*first, *a);
+    std::swap(*first, *a);
 
     /* partition */
     for(b = first; (++b < last) && ((x = Td[PA[*b]]) == v);) { }
     if(((a = b) < last) && (x < v)) {
       for(; (++b < last) && ((x = Td[PA[*b]]) <= v);) {
-        if(x == v) { SWAP(*b, *a); ++a; }
+        if(x == v) { std::swap(*b, *a); ++a; }
       }
     }
     for(c = last; (b < --c) && ((x = Td[PA[*c]]) == v);) { }
     if((b < (d = c)) && (x > v)) {
       for(; (b < --c) && ((x = Td[PA[*c]]) >= v);) {
-        if(x == v) { SWAP(*c, *d); --d; }
+        if(x == v) { std::swap(*c, *d); --d; }
       }
     }
     for(; b < c;) {
-      SWAP(*b, *c);
+      std::swap(*b, *c);
       for(; (++b < c) && ((x = Td[PA[*b]]) <= v);) {
-        if(x == v) { SWAP(*b, *a); ++a; }
+        if(x == v) { std::swap(*b, *a); ++a; }
       }
       for(; (b < --c) && ((x = Td[PA[*c]]) >= v);) {
-        if(x == v) { SWAP(*c, *d); --d; }
+        if(x == v) { std::swap(*c, *d); --d; }
       }
     }
 
@@ -392,9 +392,9 @@ ss_mintrosort(const sauchar_t *T, const saidx_t *PA,
       c = b - 1;
 
       if((s = a - first) > (t = b - a)) { s = t; }
-      for(e = first, f = b - s; 0 < s; --s, ++e, ++f) { SWAP(*e, *f); }
+      for(e = first, f = b - s; 0 < s; --s, ++e, ++f) { std::swap(*e, *f); }
       if((s = d - c) > (t = last - d - 1)) { s = t; }
-      for(e = b, f = last - s; 0 < s; --s, ++e, ++f) { SWAP(*e, *f); }
+      for(e = b, f = last - s; 0 < s; --s, ++e, ++f) { std::swap(*e, *f); }
 
       a = first + (b - a), c = last - (d - c);
       b = (v <= Td[PA[*a] - 1]) ? a : ss_partition(PA, a, c, depth);
