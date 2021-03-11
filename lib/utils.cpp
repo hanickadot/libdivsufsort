@@ -56,15 +56,15 @@ bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA,
   saint_t c;
 
   /* Check arguments. */
-  if((T == NULL) || (U == NULL) || (n < 0) || (idx == NULL)) { return -1; }
+  if((T == nullptr) || (U == nullptr) || (n < 0) || (idx == nullptr)) { return -1; }
   if(n <= 1) {
     if(n == 1) { U[0] = T[0]; }
     *idx = n;
     return 0;
   }
 
-  if((A = SA) == NULL) {
-    i = divbwt(T, U, NULL, n);
+  if((A = SA) == nullptr) {
+    i = divbwt(T, U, nullptr, n);
     if(0 <= i) { *idx = i; i = 0; }
     return static_cast<saint_t>(i);
   }
@@ -99,7 +99,7 @@ bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *SA,
     for(++i; i < n; ++i) { U[i] = T[A[i] - 1]; }
   }
 
-  if(SA == NULL) {
+  if(SA == nullptr) {
     /* Deallocate memory. */
     free(A);
   }
@@ -118,15 +118,15 @@ inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A,
   saint_t c, d;
 
   /* Check arguments. */
-  if((T == NULL) || (U == NULL) || (n < 0) || (idx < 0) ||
+  if((T == nullptr) || (U == nullptr) || (n < 0) || (idx < 0) ||
      (n < idx) || ((0 < n) && (idx == 0))) {
     return -1;
   }
   if(n <= 1) { return 0; }
 
-  if((B = A) == NULL) {
+  if((B = A) == nullptr) {
     /* Allocate n*sizeof(saidx_t) bytes of memory. */
-    if((B = (saidx_t *)malloc(static_cast<size_t>(n) * sizeof(saidx_t))) == NULL) { return -2; }
+    if((B = (saidx_t *)malloc(static_cast<size_t>(n) * sizeof(saidx_t))) == nullptr) { return -2; }
   }
 
   /* Inverse BW transform. */
@@ -148,7 +148,7 @@ inverse_bw_transform(const sauchar_t *T, sauchar_t *U, saidx_t *A,
     p = B[p - 1];
   }
 
-  if(A == NULL) {
+  if(A == nullptr) {
     /* Deallocate memory. */
     free(B);
   }
@@ -167,7 +167,7 @@ sufcheck(const sauchar_t *T, const saidx_t *SA,
   if(verbose) { fprintf(stderr, "sufcheck: "); }
 
   /* Check arguments. */
-  if((T == NULL) || (SA == NULL) || (n < 0)) {
+  if((T == nullptr) || (SA == nullptr) || (n < 0)) {
     if(verbose) { fprintf(stderr, "Invalid arguments.\n"); }
     return -1;
   }
@@ -266,11 +266,11 @@ sa_search(const sauchar_t *T, saidx_t Tsize,
   saidx_t i, j, k;
   saint_t r;
 
-  if(idx != NULL) { *idx = -1; }
-  if((T == NULL) || (P == NULL) || (SA == NULL) ||
+  if(idx != nullptr) { *idx = -1; }
+  if((T == nullptr) || (P == nullptr) || (SA == nullptr) ||
      (Tsize < 0) || (Psize < 0) || (SAsize < 0)) { return -1; }
   if((Tsize == 0) || (SAsize == 0)) { return 0; }
-  if(Psize == 0) { if(idx != NULL) { *idx = 0; } return SAsize; }
+  if(Psize == 0) { if(idx != nullptr) { *idx = 0; } return SAsize; }
 
   for(i = j = k = 0, lmatch = rmatch = 0, size = SAsize, half = size >> 1;
       0 < size;
@@ -320,7 +320,7 @@ sa_search(const sauchar_t *T, saidx_t Tsize,
     }
   }
 
-  if(idx != NULL) { *idx = (0 < (k - j)) ? j : i; }
+  if(idx != nullptr) { *idx = (0 < (k - j)) ? j : i; }
   return k - j;
 }
 
@@ -333,8 +333,8 @@ sa_simplesearch(const sauchar_t *T, saidx_t Tsize,
   saidx_t i, j, k, p;
   saint_t r;
 
-  if(idx != NULL) { *idx = -1; }
-  if((T == NULL) || (SA == NULL) || (Tsize < 0) || (SAsize < 0)) { return -1; }
+  if(idx != nullptr) { *idx = -1; }
+  if((T == nullptr) || (SA == nullptr) || (Tsize < 0) || (SAsize < 0)) { return -1; }
   if((Tsize == 0) || (SAsize == 0)) { return 0; }
 
   for(i = j = k = 0, size = SAsize, half = size >> 1;
@@ -376,6 +376,6 @@ sa_simplesearch(const sauchar_t *T, saidx_t Tsize,
     }
   }
 
-  if(idx != NULL) { *idx = (0 < (k - j)) ? j : i; }
+  if(idx != nullptr) { *idx = (0 < (k - j)) ? j : i; }
   return k - j;
 }

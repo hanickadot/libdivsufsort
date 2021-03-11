@@ -205,7 +205,7 @@ construct_SA(const sauchar_t *T, saidx_t *SA,
     for(c1 = ALPHABET_SIZE - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
       for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
-          j = SA + BUCKET_A(c1 + 1) - 1, k = NULL, c2 = -1;
+          j = SA + BUCKET_A(c1 + 1) - 1, k = nullptr, c2 = -1;
           i <= j;
           --j) {
         if(0 < (s = *j)) {
@@ -269,7 +269,7 @@ construct_BWT(const sauchar_t *T, saidx_t *SA,
     for(c1 = ALPHABET_SIZE - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
       for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
-          j = SA + BUCKET_A(c1 + 1) - 1, k = NULL, c2 = -1;
+          j = SA + BUCKET_A(c1 + 1) - 1, k = nullptr, c2 = -1;
           i <= j;
           --j) {
         if(0 < (s = *j)) {
@@ -330,64 +330,51 @@ construct_BWT(const sauchar_t *T, saidx_t *SA,
 
 saint_t
 divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n) {
-  saidx_t *bucket_A, *bucket_B;
   saidx_t m;
   saint_t err = 0;
 
   /* Check arguments. */
-  if((T == NULL) || (SA == NULL) || (n < 0)) { return -1; }
+  if((T == nullptr) || (SA == nullptr) || (n < 0)) { return -1; }
   else if(n == 0) { return 0; }
   else if(n == 1) { SA[0] = 0; return 0; }
   else if(n == 2) { m = (T[0] < T[1]); SA[m ^ 1] = 0, SA[m] = 1; return 0; }
 
-  bucket_A = (saidx_t *)malloc(BUCKET_A_SIZE * sizeof(saidx_t));
-  bucket_B = (saidx_t *)malloc(BUCKET_B_SIZE * sizeof(saidx_t));
+  std::array<saidx_t, BUCKET_A_SIZE> bucket_A;
+  std::array<saidx_t, BUCKET_B_SIZE> bucket_B;
 
-  /* Suffixsort. */
-  if((bucket_A != NULL) && (bucket_B != NULL)) {
-    m = sort_typeBstar(T, SA, bucket_A, bucket_B, n);
-    construct_SA(T, SA, bucket_A, bucket_B, n, m);
-  } else {
-    err = -2;
-  }
-
-  free(bucket_B);
-  free(bucket_A);
-
+  m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
+  construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
+		
   return err;
 }
 
 saidx_t
 divbwt(const sauchar_t *T, sauchar_t *U, saidx_t *A, saidx_t n) {
   saidx_t *B;
-  saidx_t *bucket_A, *bucket_B;
   saidx_t m, pidx, i;
 
   /* Check arguments. */
-  if((T == NULL) || (U == NULL) || (n < 0)) { return -1; }
+  if((T == nullptr) || (U == nullptr) || (n < 0)) { return -1; }
   else if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
 
-  if((B = A) == NULL) { B = (saidx_t *)malloc(static_cast<size_t>(n + 1) * sizeof(saidx_t)); }
-  bucket_A = (saidx_t *)malloc(BUCKET_A_SIZE * sizeof(saidx_t));
-  bucket_B = (saidx_t *)malloc(BUCKET_B_SIZE * sizeof(saidx_t));
+  if((B = A) == nullptr) { 
+    B = (saidx_t *)malloc(static_cast<size_t>(n + 1) * sizeof(saidx_t));
+  }
+	
+	std::array<saidx_t, BUCKET_A_SIZE> bucket_A;
+	std::array<saidx_t, BUCKET_B_SIZE> bucket_B;
 
   /* Burrows-Wheeler Transform. */
-  if((B != NULL) && (bucket_A != NULL) && (bucket_B != NULL)) {
-    m = sort_typeBstar(T, B, bucket_A, bucket_B, n);
-    pidx = construct_BWT(T, B, bucket_A, bucket_B, n, m);
+  m = sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
+  pidx = construct_BWT(T, B, bucket_A.data(), bucket_B.data(), n, m);
 
-    /* Copy to output string. */
-    U[0] = T[n - 1];
-    for(i = 0; i < pidx; ++i) { U[i + 1] = (sauchar_t)B[i]; }
-    for(i += 1; i < n; ++i) { U[i] = (sauchar_t)B[i]; }
-    pidx += 1;
-  } else {
-    pidx = -2;
-  }
+  /* Copy to output string. */
+  U[0] = T[n - 1];
+  for(i = 0; i < pidx; ++i) { U[i + 1] = (sauchar_t)B[i]; }
+  for(i += 1; i < n; ++i) { U[i] = (sauchar_t)B[i]; }
+  pidx += 1;
 
-  free(bucket_B);
-  free(bucket_A);
-  if(A == NULL) { free(B); }
+  if(A == nullptr) { free(B); }
 
   return pidx;
 }

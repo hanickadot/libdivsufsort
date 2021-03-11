@@ -79,7 +79,7 @@ divsufsort@W64BIT@(const sauchar_t *T, saidx@W64BIT@_t *SA, saidx@W64BIT@_t n);
  * Constructs the burrows-wheeler transformed string of a given string.
  * @param T[0..n-1] The input string.
  * @param U[0..n-1] The output string. (can be T)
- * @param A[0..n-1] The temporary array. (can be NULL)
+ * @param A[0..n-1] The temporary array. (can be nullptr)
  * @param n The length of the given string.
  * @return The primary index if no error occurred, -1 or -2 otherwise.
  */
@@ -100,7 +100,7 @@ divsufsort@W64BIT@_version(void);
  * Constructs the burrows-wheeler transformed string of a given string and suffix array.
  * @param T[0..n-1] The input string.
  * @param U[0..n-1] The output string. (can be T)
- * @param SA[0..n-1] The suffix array. (can be NULL)
+ * @param SA[0..n-1] The suffix array. (can be nullptr)
  * @param n The length of the given string.
  * @param idx The output primary index.
  * @return 0 if no error occurred, -1 or -2 otherwise.
@@ -108,14 +108,14 @@ divsufsort@W64BIT@_version(void);
 DIVSUFSORT_API
 saint_t
 bw_transform@W64BIT@(const sauchar_t *T, sauchar_t *U,
-             saidx@W64BIT@_t *SA /* can NULL */,
+             saidx@W64BIT@_t *SA /* can nullptr */,
              saidx@W64BIT@_t n, saidx@W64BIT@_t *idx);
 
 /**
  * Inverse BW-transforms a given BWTed string.
  * @param T[0..n-1] The input string.
  * @param U[0..n-1] The output string. (can be T)
- * @param A[0..n-1] The temporary array. (can be NULL)
+ * @param A[0..n-1] The temporary array. (can be nullptr)
  * @param n The length of the given string.
  * @param idx The primary index.
  * @return 0 if no error occurred, -1 or -2 otherwise.
@@ -123,7 +123,7 @@ bw_transform@W64BIT@(const sauchar_t *T, sauchar_t *U,
 DIVSUFSORT_API
 saint_t
 inverse_bw_transform@W64BIT@(const sauchar_t *T, sauchar_t *U,
-                     saidx@W64BIT@_t *A /* can NULL */,
+                     saidx@W64BIT@_t *A /* can nullptr */,
                      saidx@W64BIT@_t n, saidx@W64BIT@_t idx);
 
 /**

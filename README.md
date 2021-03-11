@@ -69,7 +69,7 @@ divsufsort(const sauchar_t *T, saidx_t *SA, saidx_t n);
  * Constructs the burrows-wheeler transformed string of a given string.
  * @param T[0..n-1] The input string.
  * @param U[0..n-1] The output string. (can be T)
- * @param A[0..n-1] The temporary array. (can be NULL)
+ * @param A[0..n-1] The temporary array. (can be nullptr)
  * @param n The length of the given string.
  * @return The primary index if no error occurred, -1 or -2 otherwise.
  */
