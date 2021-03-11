@@ -32,14 +32,14 @@
 # include <omp.h>
 #endif
 
-
+namespace divss::internal {
 /*- Private Functions -*/
 
-#define BUCKET_B(_c0, _c1) (bucket_B[(_c1) * alphabet_size<CharT> + (_c0)])
-#define BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * alphabet_size<CharT> + (_c1)])
+#define SUFS_BUCKET_B(_c0, _c1) (bucket_B[(_c1) * alphabet_size<CharT> + (_c0)])
+#define SUFS_BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * alphabet_size<CharT> + (_c1)])
 
 /* Sorts suffixes of type B*. */
-template <typename CharT = unsigned char, typename ResultT = int32_t> static ResultT sort_typeBstar(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> static ResultT sort_typeBstar(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n) noexcept {
   ResultT *PAb, *ISAb, *buf;
 #ifdef _OPENMP
   ResultT *curbuf;
@@ -61,11 +61,11 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
     do { ++bucket_A[c1 = c0]; } while((0 <= --i) && ((c0 = T[i]) >= c1));
     if(0 <= i) {
       /* type B* suffix. */
-      ++BUCKET_BSTAR(c0, c1);
+      ++SUFS_BUCKET_BSTAR(c0, c1);
       SA[--m] = i;
       /* type B suffix. */
       for(--i, c1 = c0; (0 <= i) && ((c0 = T[i]) <= c1); --i, c1 = c0) {
-        ++BUCKET_B(c0, c1);
+        ++SUFS_BUCKET_B(c0, c1);
       }
     }
   }
@@ -80,11 +80,11 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
   for(c0 = 0, i = 0, j = 0; c0 < static_cast<int32_t>(alphabet_size<CharT>); ++c0) {
     t = i + bucket_A[c0];
     bucket_A[c0] = i + j; /* start point */
-    i = t + BUCKET_B(c0, c0);
+    i = t + SUFS_BUCKET_B(c0, c0);
     for(c1 = c0 + 1; c1 < static_cast<int32_t>(alphabet_size<CharT>); ++c1) {
-      j += BUCKET_BSTAR(c0, c1);
-      BUCKET_BSTAR(c0, c1) = j; /* end point */
-      i += BUCKET_B(c0, c1);
+      j += SUFS_BUCKET_BSTAR(c0, c1);
+      SUFS_BUCKET_BSTAR(c0, c1) = j; /* end point */
+      i += SUFS_BUCKET_B(c0, c1);
     }
   }
 
@@ -93,10 +93,10 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
     PAb = SA + n - m; ISAb = SA + m;
     for(i = m - 2; 0 <= i; --i) {
       t = PAb[i], c0 = T[t], c1 = T[t + 1];
-      SA[--BUCKET_BSTAR(c0, c1)] = i;
+      SA[--SUFS_BUCKET_BSTAR(c0, c1)] = i;
     }
     t = PAb[m - 1], c0 = T[t], c1 = T[t + 1];
-    SA[--BUCKET_BSTAR(c0, c1)] = m - 1;
+    SA[--SUFS_BUCKET_BSTAR(c0, c1)] = m - 1;
 
     /* Sort the type B* substrings using sssort. */
 #ifdef _OPENMP
@@ -114,7 +114,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
           if(0 < (l = j)) {
             d0 = c0, d1 = c1;
             do {
-              k = BUCKET_BSTAR(d0, d1);
+              k = SUFS_BUCKET_BSTAR(d0, d1);
               if(--d1 <= d0) {
                 d1 = alphabet_size<CharT> - 1;
                 if(--d0 < 0) { break; }
@@ -132,7 +132,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
     buf = SA + m, bufsize = n - (2 * m);
     for(c0 = alphabet_size<CharT> - 2, j = m; 0 < j; --c0) {
       for(c1 = alphabet_size<CharT> - 1; c0 < c1; j = i, --c1) {
-        i = BUCKET_BSTAR(c0, c1);
+        i = SUFS_BUCKET_BSTAR(c0, c1);
         if(1 < (j - i)) {
           sssort<CharT, ResultT>(T, PAb, SA + i, SA + j, buf, bufsize, 2, n, *(SA + i) == (m - 1));
         }
@@ -167,20 +167,20 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
     }
 
     /* Calculate the index of start/end point of each bucket. */
-    BUCKET_B(alphabet_size<CharT> - 1, alphabet_size<CharT> - 1) = n; /* end point */
+    SUFS_BUCKET_B(alphabet_size<CharT> - 1, alphabet_size<CharT> - 1) = n; /* end point */
     for(c0 = alphabet_size<CharT> - 2, k = m - 1; 0 <= c0; --c0) {
       i = bucket_A[c0 + 1] - 1;
       for(c1 = alphabet_size<CharT> - 1; c0 < c1; --c1) {
-        t = i - BUCKET_B(c0, c1);
-        BUCKET_B(c0, c1) = i; /* end point */
+        t = i - SUFS_BUCKET_B(c0, c1);
+        SUFS_BUCKET_B(c0, c1) = i; /* end point */
 
         /* Move all type B* suffixes to the correct position. */
-        for(i = t, j = BUCKET_BSTAR(c0, c1);
+        for(i = t, j = SUFS_BUCKET_BSTAR(c0, c1);
             j <= k;
             --i, --k) { SA[i] = SA[k]; }
       }
-      BUCKET_BSTAR(c0, c0 + 1) = i - BUCKET_B(c0, c0) + 1; /* start point */
-      BUCKET_B(c0, c0) = i; /* end point */
+      SUFS_BUCKET_BSTAR(c0, c0 + 1) = i - SUFS_BUCKET_B(c0, c0) + 1; /* start point */
+      SUFS_BUCKET_B(c0, c0) = i; /* end point */
     }
   }
 
@@ -188,7 +188,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
 }
 
 /* Constructs the suffix array by using the sorted order of type B* suffixes. */
-template <typename CharT = unsigned char, typename ResultT = int32_t> static void construct_SA(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> static void construct_SA(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) noexcept {
   ResultT *i, *j, *k;
   ResultT s;
   int32_t c0, c1, c2;
@@ -199,7 +199,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static voi
     for(c1 = alphabet_size<CharT> - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
       // hana: k = j is difference against upstream, so it won't dereference nullptr
-      for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
+      for(i = SA + SUFS_BUCKET_BSTAR(c1, c1 + 1),
           j = SA + bucket_A[c1 + 1] - 1, k = j, c2 = -1;
           i <= j;
           --j) {
@@ -211,8 +211,8 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static voi
           c0 = T[--s];
           if((0 < s) && (T[s - 1] > c0)) { s = ~s; }
           if(c0 != c2) {
-            if(0 <= c2) { BUCKET_B(c2, c1) = k - SA; }
-            k = SA + BUCKET_B(c2 = c0, c1);
+            if(0 <= c2) { SUFS_BUCKET_B(c2, c1) = k - SA; }
+            k = SA + SUFS_BUCKET_B(c2 = c0, c1);
           }
           assert(k < j);
           *k-- = s;
@@ -249,7 +249,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static voi
 
 /* Constructs the burrows-wheeler transformed string directly
    by using the sorted order of type B* suffixes. */
-template <typename CharT = unsigned char, typename ResultT = int32_t> static ResultT construct_BWT(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> static ResultT construct_BWT(const CharT *T, ResultT *SA, ResultT *bucket_A, ResultT *bucket_B, ResultT n, ResultT m) noexcept {
   ResultT *i, *j, *k, *orig;
   ResultT s;
   int32_t c0, c1, c2;
@@ -259,7 +259,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
        the sorted order of type B* suffixes. */
     for(c1 = alphabet_size<CharT> - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
-      for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
+      for(i = SA + SUFS_BUCKET_BSTAR(c1, c1 + 1),
           j = SA + bucket_A[c1 + 1] - 1, k = nullptr, c2 = -1;
           i <= j;
           --j) {
@@ -271,8 +271,8 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
           *j = ~(static_cast<ResultT>(c0));
           if((0 < s) && (T[s - 1] > c0)) { s = ~s; }
           if(c0 != c2) {
-            if(0 <= c2) { BUCKET_B(c2, c1) = k - SA; }
-            k = SA + BUCKET_B(c2 = c0, c1);
+            if(0 <= c2) { SUFS_BUCKET_B(c2, c1) = k - SA; }
+            k = SA + SUFS_BUCKET_B(c2 = c0, c1);
           }
           assert(k < j);
           *k-- = s;
@@ -312,12 +312,15 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
   return orig - SA;
 }
 
+} // namespace divss
 
 /*---------------------------------------------------------------------------*/
 
 /*- Function -*/
 
-template <typename CharT = unsigned char, typename ResultT = int32_t> void divsufsort(const CharT *T, ResultT *SA, no_deduce<ResultT> n) {
+namespace divss {
+
+template <typename CharT = unsigned char, typename ResultT = int32_t> void suffix_sort(const CharT *T, ResultT *SA, no_deduce<ResultT> n) noexcept {
   /* Check arguments. */
 	assert(T != nullptr);
 	assert(SA != nullptr);
@@ -330,19 +333,19 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> void divsu
   std::array<ResultT, bucket_A_size<CharT>> bucket_A{};
   std::array<ResultT, bucket_B_size<CharT>> bucket_B{};
 
-  ResultT m = sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
-  construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
+  ResultT m = internal::sort_typeBstar(T, SA, bucket_A.data(), bucket_B.data(), n);
+  internal::construct_SA(T, SA, bucket_A.data(), bucket_B.data(), n, m);
 }
 
-template <typename ResultT = int32_t, typename CharT = unsigned char> auto divsufsort(std::span<const CharT> T) -> std::vector<ResultT> {
+template <typename ResultT = int32_t, typename CharT = unsigned char> auto suffix_array(std::span<const CharT> T) noexcept -> std::vector<ResultT> {
 	auto result = std::vector<ResultT>(T.size());
 	
-	divsufsort(T.data(), result.data(), T.size());
+	suffix_sort(T.data(), result.data(), T.size());
 	
 	return result;
 }
 
-template <typename CharT = unsigned char, typename ResultT = int32_t> ResultT divbwt(const CharT *T, CharT *U, ResultT *A, no_deduce<ResultT> n) {
+template <typename CharT = unsigned char, typename ResultT = int32_t> ResultT divbwt(const CharT *T, CharT *U, ResultT *A, no_deduce<ResultT> n) noexcept {
   ResultT *B;
 
   /* Check arguments. */
@@ -357,8 +360,8 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> ResultT di
 	std::array<ResultT, bucket_B_size<CharT>> bucket_B{};
 
   /* Burrows-Wheeler Transform. */
-  ResultT m = sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
-  ResultT pidx = construct_BWT(T, B, bucket_A.data(), bucket_B.data(), n, m);
+  ResultT m = internal::sort_typeBstar(T, B, bucket_A.data(), bucket_B.data(), n);
+  ResultT pidx = internal::construct_BWT(T, B, bucket_A.data(), bucket_B.data(), n, m);
 
   /* Copy to output string. */
   U[0] = T[n - 1];
@@ -375,3 +378,5 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> ResultT di
 const char * divsufsort_version(void) {
   return "1.0";
 }
+
+} // namespace divss 

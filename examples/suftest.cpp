@@ -33,7 +33,7 @@
 #include <utils.hpp>
 
 static void print_help(const char *progname, int status) {
-	std::cerr << "suftest, a suffixsort tester, version " << divsufsort_version() << "\n";
+	std::cerr << "suftest, a suffixsort tester, version " << divss::divsufsort_version() << "\n";
 	std::cerr << "usage " << progname << " FILE\n\n";
   exit(status);
 }
@@ -102,7 +102,7 @@ int main(int argc, const char *argv[]) {
 	std::cerr << fname << ": " << n << " bytes ... \n";
   auto start = std::chrono::high_resolution_clock::now();
 	
-	auto result = divsufsort<int32_t>(std::span<const unsigned char>(reinterpret_cast<const unsigned char *>(T), n));
+	auto result = divss::suffix_array<int32_t>(std::span<const unsigned char>(reinterpret_cast<const unsigned char *>(T), n));
 	
   auto finish = std::chrono::high_resolution_clock::now();
 	std::cerr << std::chrono::duration_cast<std::chrono::milliseconds>(finish-start).count() << " ms\n";

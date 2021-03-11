@@ -28,9 +28,11 @@
 
 /*- Private Functions -*/
 
+namespace divss::internal {
+
 #if (SS_BLOCKSIZE == 0) || (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE)
 
-template <typename ResultT> static inline int32_t ss_ilg(ResultT n) {
+template <typename ResultT> static inline int32_t ss_ilg(ResultT n) noexcept {
 #if SS_BLOCKSIZE == 0
 	if constexpr (sizeof(ResultT) == 8) {
   return (n >> 32) ?
@@ -70,7 +72,7 @@ template <typename ResultT> static inline int32_t ss_ilg(ResultT n) {
 
 #if SS_BLOCKSIZE != 0
 
-static inline int ss_isqrt(int x) {
+static inline int ss_isqrt(int x) noexcept {
   int y, e;
 
   if(x >= (SS_BLOCKSIZE * SS_BLOCKSIZE)) { return SS_BLOCKSIZE; }
@@ -256,7 +258,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
     }
   };
   
-  static_stack<stack_type, SS_MISORT_STACKSIZE> stack;
+  static_stack<stack_type, min_stack_size<ResultT>()> stack;
   const CharT *Td;
   ResultT *a, *b, *c, *d, *e, *f;
   ResultT s, t;
@@ -602,7 +604,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
     }
   };
   
-  static_stack<stack_type, SS_SMERGE_STACKSIZE> stack;
+  static_stack<stack_type, min_stack_size<ResultT>()> stack;
   ResultT *l, *r, *lm, *rm;
   ResultT m, len, half;
   int32_t check, next;
@@ -674,8 +676,11 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 
 #endif /* SS_BLOCKSIZE != 0 */
 
+} // namespace divss::internal
 
 /*---------------------------------------------------------------------------*/
+
+namespace divss {
 
 /*- Function -*/
 
@@ -694,9 +699,9 @@ template <typename CharT = unsigned char, typename ResultT = int> void sssort(co
   }
 
   if constexpr (SS_BLOCKSIZE == 0) {
-    ss_mintrosort(T, PA, first, last, depth);
+    internal::ss_mintrosort(T, PA, first, last, depth);
   } else {
-    if((bufsize < SS_BLOCKSIZE) && (bufsize < (last - first)) && (bufsize < (limit = ss_isqrt(last - first)))) {
+    if((bufsize < SS_BLOCKSIZE) && (bufsize < (last - first)) && (bufsize < (limit = internal::ss_isqrt(last - first)))) {
       if(SS_BLOCKSIZE < limit) {
         limit = SS_BLOCKSIZE;
       }
@@ -707,9 +712,9 @@ template <typename CharT = unsigned char, typename ResultT = int> void sssort(co
     
     for(a = first, i = 0; SS_BLOCKSIZE < (middle - a); a += SS_BLOCKSIZE, ++i) {
       if constexpr (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE) {
-        ss_mintrosort(T, PA, a, a + SS_BLOCKSIZE, depth);
+        internal::ss_mintrosort(T, PA, a, a + SS_BLOCKSIZE, depth);
       } else if constexpr (1 < SS_BLOCKSIZE) {
-        ss_insertionsort(T, PA, a, a + SS_BLOCKSIZE, depth);
+        internal::ss_insertionsort(T, PA, a, a + SS_BLOCKSIZE, depth);
       }
     
       curbufsize = last - (a + SS_BLOCKSIZE);
@@ -718,38 +723,43 @@ template <typename CharT = unsigned char, typename ResultT = int> void sssort(co
         curbufsize = bufsize, curbuf = buf;
       }
       for(b = a, k = SS_BLOCKSIZE, j = i; j & 1; b -= k, k <<= 1, j >>= 1) {
-        ss_swapmerge(T, PA, b - k, b, b + k, curbuf, curbufsize, depth);
+        internal::ss_swapmerge(T, PA, b - k, b, b + k, curbuf, curbufsize, depth);
       }
     }
   
     if constexpr (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE) {
-      ss_mintrosort(T, PA, a, middle, depth);
+      internal::ss_mintrosort(T, PA, a, middle, depth);
     } else if (1 < SS_BLOCKSIZE) {
-      ss_insertionsort(T, PA, a, middle, depth);
+      internal::ss_insertionsort(T, PA, a, middle, depth);
     }
     
     for(k = SS_BLOCKSIZE; i != 0; k <<= 1, i >>= 1) {
       if(i & 1) {
-        ss_swapmerge(T, PA, a - k, a, middle, buf, bufsize, depth);
+        internal::ss_swapmerge(T, PA, a - k, a, middle, buf, bufsize, depth);
         a -= k;
       }
     }
     if(limit != 0) {
       if constexpr (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE) {
-        ss_mintrosort(T, PA, middle, last, depth);
+        internal::ss_mintrosort(T, PA, middle, last, depth);
       } else if (1 < SS_BLOCKSIZE) {
-        ss_insertionsort(T, PA, middle, last, depth);
+        internal::ss_insertionsort(T, PA, middle, last, depth);
       }
-      ss_inplacemerge(T, PA, first, middle, last, depth);
+      internal::ss_inplacemerge(T, PA, first, middle, last, depth);
     }
   }
 
   if(lastsuffix != 0) {
     /* Insert last type B* suffix. */
     ResultT PAi[2] = { PA[*(first - 1)], n - 2};
-    for(a = first, i = *(first - 1); (a < last) && ((*a < 0) || (0 < ss_compare(T, &(PAi[0]), PA + *a, depth))); ++a) {
+    for(a = first, i = *(first - 1); (a < last) && ((*a < 0) || (0 < internal::ss_compare(T, &(PAi[0]), PA + *a, depth))); ++a) {
       *(a - 1) = *a;
     }
     *(a - 1) = i;
   }
 }
+
+} // namespace divss
+
+
+

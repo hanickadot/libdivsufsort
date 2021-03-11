@@ -26,6 +26,8 @@
 
 #include "common.hpp"
 
+namespace divss::internal {
+
 /*- Private Functions -*/
 
 template <typename ResultT> static inline int32_t tr_ilg(ResultT n) {
@@ -288,7 +290,7 @@ template <typename ResultT> static void tr_introsort(ResultT *ISA, const ResultT
       return std::tie(a,b,c,d,e);
     }
   };
-  static_stack<stack_type, TR_STACKSIZE> stack;
+  static_stack<stack_type, min_stack_size<ResultT>()> stack;
   
   ResultT *a, *b, *c;
   ResultT v, x = 0;
@@ -514,20 +516,22 @@ template <typename ResultT> static void tr_introsort(ResultT *ISA, const ResultT
 #undef STACK_SIZE
 }
 
-
+} // namespace divss::internal
 
 /*---------------------------------------------------------------------------*/
+
+namespace divss {
 
 /*- Function -*/
 
 /* Tandem repeat sort */
-template <typename ResultT> void trsort(ResultT *ISA, ResultT *SA, ResultT n, ResultT depth) {
+template <typename ResultT> void trsort(ResultT *ISA, ResultT *SA, ResultT n, ResultT depth) noexcept {
   ResultT *ISAd;
   ResultT *first, *last;
-  trbudget_t budget;
+  internal::trbudget_t budget;
   ResultT t, skip, unsorted;
 
-  trbudget_init(&budget, tr_ilg(n) * 2 / 3, n);
+  internal::trbudget_init(&budget, internal::tr_ilg(n) * 2 / 3, n);
 /*  trbudget_init(&budget, tr_ilg(n) * 3 / 4, n); */
   for(ISAd = ISA + depth; -n < *SA; ISAd += ISAd - ISA) {
     first = SA;
@@ -540,7 +544,7 @@ template <typename ResultT> void trsort(ResultT *ISA, ResultT *SA, ResultT n, Re
         last = SA + ISA[t] + 1;
         if(1 < (last - first)) {
           budget.count = 0;
-          tr_introsort(ISA, ISAd, SA, first, last, &budget);
+          internal::tr_introsort(ISA, ISAd, SA, first, last, &budget);
           if(budget.count != 0) { unsorted += budget.count; }
           else { skip = first - last; }
         } else if((last - first) == 1) {
@@ -553,3 +557,5 @@ template <typename ResultT> void trsort(ResultT *ISA, ResultT *SA, ResultT n, Re
     if(unsorted == 0) { break; }
   }
 }
+
+} // namespace divss 

@@ -9,49 +9,28 @@
 #include <cstddef>
 #include <tuple>
 
-#if defined(SS_INSERTIONSORT_THRESHOLD)
-# if SS_INSERTIONSORT_THRESHOLD < 1
-#  undef SS_INSERTIONSORT_THRESHOLD
-#  define SS_INSERTIONSORT_THRESHOLD (1)
-# endif
-#else
-# define SS_INSERTIONSORT_THRESHOLD (8)
-#endif
-#if defined(SS_BLOCKSIZE)
-# if SS_BLOCKSIZE < 0
-#  undef SS_BLOCKSIZE
-#  define SS_BLOCKSIZE (0)
-# elif 32768 <= SS_BLOCKSIZE
-#  undef SS_BLOCKSIZE
-#  define SS_BLOCKSIZE (32767)
-# endif
-#else
-# define SS_BLOCKSIZE (1024)
-#endif
-/* minstacksize = log(SS_BLOCKSIZE) / log(3) * 2 */
-#if SS_BLOCKSIZE == 0
-# if defined(BUILD_DIVSUFSORT64)
-#  define SS_MISORT_STACKSIZE (96)
-# else
-#  define SS_MISORT_STACKSIZE (64)
-# endif
-#elif SS_BLOCKSIZE <= 4096
-# define SS_MISORT_STACKSIZE (16)
-#else
-# define SS_MISORT_STACKSIZE (24)
-#endif
-#if defined(BUILD_DIVSUFSORT64)
-# define SS_SMERGE_STACKSIZE (64)
-#else
-# define SS_SMERGE_STACKSIZE (32)
-#endif
-/* for trsort.c */
+#define SS_INSERTIONSORT_THRESHOLD (8)
+#define SS_BLOCKSIZE (1024)
 #define TR_INSERTIONSORT_THRESHOLD (8)
-#if defined(BUILD_DIVSUFSORT64)
-# define TR_STACKSIZE (96)
-#else
-# define TR_STACKSIZE (64)
-#endif
+
+
+constexpr size_t log2(size_t n)
+{
+	if (n < 2) {
+		return 1;
+	} else {
+		return 1 + log2(n / 2);
+	}
+}
+
+template <typename T> static constexpr size_t min_stack_size() {
+	/* minstacksize = log(SS_BLOCKSIZE) / log(3) * 2 */
+	if (sizeof(T) == 8) {
+		return 96;
+	} else {
+		return 64;
+	}
+}
 
 static constexpr inline int32_t lg_table[256]= {
  -1,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
