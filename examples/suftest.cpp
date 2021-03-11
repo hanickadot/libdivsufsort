@@ -24,37 +24,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#if HAVE_CONFIG_H
-# include "config.hpp"
-#endif
-#include <stdio.h>
-#if HAVE_STRING_H
-# include <string.h>
-#endif
-#if HAVE_STDLIB_H
-# include <stdlib.h>
-#endif
-#if HAVE_MEMORY_H
-# include <memory.h>
-#endif
-#if HAVE_STDDEF_H
-# include <stddef.h>
-#endif
-#if HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#if HAVE_IO_H && HAVE_FCNTL_H
-# include <io.h>
-# include <fcntl.h>
-#endif
+#include <cstring>
 #include <time.h>
 #include <divsufsort.hpp>
 #include <lfs.hpp>
 #include <iostream>
 #include <chrono>
+#include <utils.hpp>
 
 static void print_help(const char *progname, int status) {
 	std::cerr << "suftest, a suffixsort tester, version " << divsufsort_version() << "\n";

@@ -1,6 +1,6 @@
 #include "include/divsufsort.hpp"
 #include <string_view>
-#include <iostream>
+#include <cstdio>
 
 int main() {
 	using namespace std::string_view_literals;
@@ -8,7 +8,8 @@ int main() {
 	auto a = divsufsort(std::span<const char>(in.data(), in.size()));
 		
 	for (size_t i = 0; i != a.size(); ++i) {
-		std::cout << in[i] << ": " << a[i] << "\n";
+		printf("%c: %u\n",in[i], unsigned(a[i]));
+		//std::cout << in[i] << ": " << a[i] << "\n";
 	}
 	//
 	//for (unsigned v: a) {
