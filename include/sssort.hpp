@@ -145,7 +145,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
 
 #if (SS_BLOCKSIZE == 0) || (SS_INSERTIONSORT_THRESHOLD < SS_BLOCKSIZE)
 
-template <typename CharT = unsigned char, typename ResultT = int> static inline void ss_fixdown(const CharT *Td, const ResultT *PA, ResultT *SA, int i, int size) {
+template <typename CharT = unsigned char, typename ResultT = int> static inline void ss_fixdown(const CharT *Td, const ResultT *PA, ResultT *SA, ResultT i, ResultT size) {
   ResultT j, k;
   ResultT v;
   int32_t c, d, e;
@@ -159,7 +159,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static inline 
 }
 
 /* Simple top-down heapsort. */
-template <typename CharT = unsigned char, typename ResultT = int> static void ss_heapsort(const CharT *Td, const ResultT *PA, ResultT *SA, int size) {
+template <typename CharT = unsigned char, typename ResultT = int> static void ss_heapsort(const CharT *Td, const ResultT *PA, ResultT *SA, ResultT size) {
   ResultT i, m;
   ResultT t;
 
@@ -170,10 +170,10 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
   }
 
   for(i = m / 2 - 1; 0 <= i; --i) { ss_fixdown(Td, PA, SA, i, m); }
-  if((size % 2) == 0) { std::swap(SA[0], SA[m]); ss_fixdown(Td, PA, SA, 0, m); }
+  if((size % 2) == 0) { std::swap(SA[0], SA[m]); ss_fixdown<CharT, ResultT>(Td, PA, SA, 0, m); }
   for(i = m - 1; 0 < i; --i) {
     t = SA[0], SA[0] = SA[i];
-    ss_fixdown(Td, PA, SA, 0, i);
+    ss_fixdown<CharT, ResultT>(Td, PA, SA, 0, i);
     SA[i] = t;
   }
 }
@@ -277,7 +277,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
     }
 
     Td = T + depth;
-    if(limit-- == 0) { ss_heapsort(Td, PA, first, last - first); }
+    if(limit-- == 0) { ss_heapsort<CharT, ResultT>(Td, PA, first, last - first); }
     if(limit < 0) {
       for(a = first + 1, v = Td[PA[*first]]; a < last; ++a) {
         if((x = Td[PA[*a]]) != v) {
@@ -287,7 +287,7 @@ template <typename CharT = unsigned char, typename ResultT = int> static void ss
         }
       }
       if(Td[PA[*first] - 1] < v) {
-        first = ss_partition(PA, first, a, depth);
+        first = ss_partition<ResultT>(PA, first, a, depth);
       }
       if((a - first) <= (last - a)) {
         if(1 < (a - first)) {

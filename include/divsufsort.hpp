@@ -35,7 +35,6 @@
 
 /*- Private Functions -*/
 
-#define BUCKET_A(_c0) bucket_A[(_c0)]
 #define BUCKET_B(_c0, _c1) (bucket_B[(_c1) * alphabet_size<CharT> + (_c0)])
 #define BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * alphabet_size<CharT> + (_c1)])
 
@@ -59,7 +58,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
      type B* suffixes into the array SA. */
   for(i = n - 1, m = n, c0 = T[n - 1]; 0 <= i;) {
     /* type A suffix. */
-    do { ++BUCKET_A(c1 = c0); } while((0 <= --i) && ((c0 = T[i]) >= c1));
+    do { ++bucket_A[c1 = c0]; } while((0 <= --i) && ((c0 = T[i]) >= c1));
     if(0 <= i) {
       /* type B* suffix. */
       ++BUCKET_BSTAR(c0, c1);
@@ -71,16 +70,16 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
     }
   }
   m = n - m;
-/*
-note:
-  A type B* suffix is lexicographically smaller than a type B suffix that
-  begins with the same first two characters.
-*/
+	/*
+	note:
+	  A type B* suffix is lexicographically smaller than a type B suffix that
+	  begins with the same first two characters.
+	*/
 
   /* Calculate the index of start/end point of each bucket. */
   for(c0 = 0, i = 0, j = 0; c0 < static_cast<int32_t>(alphabet_size<CharT>); ++c0) {
-    t = i + BUCKET_A(c0);
-    BUCKET_A(c0) = i + j; /* start point */
+    t = i + bucket_A[c0];
+    bucket_A[c0] = i + j; /* start point */
     i = t + BUCKET_B(c0, c0);
     for(c1 = c0 + 1; c1 < static_cast<int32_t>(alphabet_size<CharT>); ++c1) {
       j += BUCKET_BSTAR(c0, c1);
@@ -170,7 +169,7 @@ note:
     /* Calculate the index of start/end point of each bucket. */
     BUCKET_B(alphabet_size<CharT> - 1, alphabet_size<CharT> - 1) = n; /* end point */
     for(c0 = alphabet_size<CharT> - 2, k = m - 1; 0 <= c0; --c0) {
-      i = BUCKET_A(c0 + 1) - 1;
+      i = bucket_A[c0 + 1] - 1;
       for(c1 = alphabet_size<CharT> - 1; c0 < c1; --c1) {
         t = i - BUCKET_B(c0, c1);
         BUCKET_B(c0, c1) = i; /* end point */
@@ -199,8 +198,9 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static voi
        the sorted order of type B* suffixes. */
     for(c1 = alphabet_size<CharT> - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
+      // hana: k = j is difference against upstream, so it won't dereference nullptr
       for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
-          j = SA + BUCKET_A(c1 + 1) - 1, k = nullptr, c2 = -1;
+          j = SA + bucket_A[c1 + 1] - 1, k = j, c2 = -1;
           i <= j;
           --j) {
         if(0 < (s = *j)) {
@@ -226,7 +226,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static voi
 
   /* Construct the suffix array by using
      the sorted order of type B suffixes. */
-  k = SA + BUCKET_A(c2 = T[n - 1]);
+  k = SA + bucket_A[c2 = T[n - 1]];
   *k++ = (T[n - 2] < c2) ? ~(n - 1) : (n - 1);
   /* Scan the suffix array from left to right. */
   for(i = SA, j = SA + n; i < j; ++i) {
@@ -235,8 +235,8 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static voi
       c0 = T[--s];
       if((s == 0) || (T[s - 1] < c0)) { s = ~s; }
       if(c0 != c2) {
-        BUCKET_A(c2) = k - SA;
-        k = SA + BUCKET_A(c2 = c0);
+        bucket_A[c2] = k - SA;
+        k = SA + bucket_A[c2 = c0];
       }
       assert(i < k);
       *k++ = s;
@@ -260,7 +260,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
     for(c1 = alphabet_size<CharT> - 2; 0 <= c1; --c1) {
       /* Scan the suffix array from right to left. */
       for(i = SA + BUCKET_BSTAR(c1, c1 + 1),
-          j = SA + BUCKET_A(c1 + 1) - 1, k = nullptr, c2 = -1;
+          j = SA + bucket_A[c1 + 1] - 1, k = nullptr, c2 = -1;
           i <= j;
           --j) {
         if(0 < (s = *j)) {
@@ -287,7 +287,7 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
 
   /* Construct the BWTed string by using
      the sorted order of type B suffixes. */
-  k = SA + BUCKET_A(c2 = T[n - 1]);
+  k = SA + bucket_A[c2 = T[n - 1]];
   *k++ = (T[n - 2] < c2) ? ~(static_cast<ResultT>(T[n - 2])) : (n - 1);
   /* Scan the suffix array from left to right. */
   for(i = SA, j = SA + n, orig = SA; i < j; ++i) {
@@ -297,8 +297,8 @@ template <typename CharT = unsigned char, typename ResultT = int32_t> static Res
       *i = c0;
       if((0 < s) && (T[s - 1] < c0)) { s = ~(static_cast<ResultT>(T[s - 1])); }
       if(c0 != c2) {
-        BUCKET_A(c2) = k - SA;
-        k = SA + BUCKET_A(c2 = c0);
+        bucket_A[c2] = k - SA;
+        k = SA + bucket_A[c2 = c0];
       }
       assert(i < k);
       *k++ = s;
